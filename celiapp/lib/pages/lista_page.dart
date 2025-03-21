@@ -8,46 +8,46 @@ class ListaPage extends StatefulWidget {
 }
 
 class _ListaPageState extends State<ListaPage> {
-
   bool isChecked = false;
 
-@override
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(backgroundColor: Colors.white, body: _page());
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: _page(),
+    );
   }
 
-  Widget _page(){
-    child: Center(
+  Widget _page() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Alinha ao centro verticalmente
         children: [
-          const Text(
-            'Nome da lista'
-          )
-          _checkbox(),
-          Divider(),
-        ]
-      )
-    )
+          const Text('Nome da lista'),
+          _checkbox(), // Adicionando vírgula que faltava
+          const Divider(), // Adicionando const para otimizar performance
+        ],
+      ),
+    );
   }
 
-  Widget _checkbox(
-    body: Center(
+  Widget _checkbox() {
+    return Center(
       child: Theme(
         data: Theme.of(context).copyWith(
           unselectedWidgetColor: Colors.grey,
         ),
-      child: CheckBoxListTile(
-        controlAffinity: ListTileControlAffinity.leading,
-        title: Text('example'),
-        value: isChecked,
-        onChanged: (value) {
-          setState(() => isChecked = value!);
-        },
-        activeColor: Colors.deepOrangeAccent,
-        checkColor: Colors.white,
+        child: CheckboxListTile(
+          controlAffinity: ListTileControlAffinity.leading,
+          title: const Text('Example'),
+          value: isChecked,
+          onChanged: (value) {
+            setState(() => isChecked = value!);
+          },
+          activeColor: Colors.deepOrangeAccent,
+          checkColor: Colors.white,
+        ),
       ),
-      )
     );
-  )
-
+  }
 }
