@@ -8,9 +8,32 @@ class ShoppingListPage extends StatefulWidget {
 }
 
 class _ShoppingListPageState extends State<ShoppingListPage> {
-  List<Map<String, dynamic>> shoppingLists = []; // Lista de listas de compras
-  TextEditingController listNameController = TextEditingController(); // Controlador para nome da lista
-  TextEditingController itemController = TextEditingController(); // Controlador para itens de compras
+  List<Map<String, dynamic>> shoppingLists = [];
+  TextEditingController listNameController = TextEditingController();
+  TextEditingController itemController = TextEditingController();
+
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, '/profile');
+        break;
+      case 1:
+        Navigator.pushNamed(context, '/map');
+        break;
+      case 2:
+        Navigator.pushNamed(context, '/recipes');
+        break;
+      case 3:
+        Navigator.pushNamed(context, '/info');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +50,33 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           Expanded(child: _shoppingLists()),
         ],
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.deepOrangeAccent,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Perfil',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: 'Receitas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info),
+            label: 'Informações',
+          ),
+        ],
+      ),
     );
   }
 
-  // Botão para criar nova lista
   Widget _createNewListButton() {
     return TextButton(
       onPressed: () {
@@ -43,7 +89,6 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 
-  // Exibe o diálogo para criar nova lista
   void _showNewListDialog() {
     showDialog(
       context: context,
@@ -77,7 +122,6 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 
-  // Exibe a lista de compras
   Widget _shoppingLists() {
     return ListView.builder(
       itemCount: shoppingLists.length,
@@ -116,7 +160,6 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 
-  // Exibe o diálogo para editar o nome da lista
   void _showEditListDialog(int index) {
     TextEditingController editController = TextEditingController(text: shoppingLists[index]['name']);
     showDialog(
@@ -150,7 +193,6 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 
-  // Exibe o diálogo para adicionar um item à lista
   void _showAddItemDialog(int index) {
     showDialog(
       context: context,
