@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'shopping_list_page.dart';
-import 'map_page.dart';
-import 'recipes_page.dart';
-import 'profile_page.dart';
 
 class InfoPage extends StatefulWidget {
   const InfoPage({super.key});
@@ -17,7 +13,7 @@ class _InfoPageState extends State<InfoPage> {
 
   // Função para abrir o link no navegador
   Future<void> _launchURL() async {
-    const url = 'https://www.fenacelbra.com.br/'; // Link para o site oficial
+    const url = 'https://www.fenacelbra.com.br/';
     if (await canLaunch(url)) {
       await launch(url);
     } else {
@@ -59,7 +55,7 @@ class _InfoPageState extends State<InfoPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start, // Alinha tudo à esquerda
           children: [
             // Título "Informações"
             const Text(
@@ -77,7 +73,7 @@ class _InfoPageState extends State<InfoPage> {
             GestureDetector(
               onTap: _launchURL,
               child: const Text(
-                'Site Oficial: FENALCEBRA',
+                'Site Oficial da FENALCEBRA',
                 style: TextStyle(
                   color: Colors.deepOrangeAccent,
                   fontSize: 18,
@@ -86,10 +82,15 @@ class _InfoPageState extends State<InfoPage> {
             ),
             const SizedBox(height: 20),
 
-            // Trecho da lei com formatação correta
+            // Trecho da lei
             const Text(
-              'LEI N° 10.674 ART. 1°',
+              'LEI N° 10.674',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'ART. 1°',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
             const Text(
@@ -108,7 +109,7 @@ class _InfoPageState extends State<InfoPage> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Créditos dos desenvolvedores:',
+              'Desenvolvido por:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
@@ -116,6 +117,24 @@ class _InfoPageState extends State<InfoPage> {
             const Text('Carolina Mesquita dos Santos', style: TextStyle(fontSize: 16)),
             const Text('Laiz Preda Torres', style: TextStyle(fontSize: 16)),
             const Text('Mayra Olimpia Tavares', style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 12),
+
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(alignment: Alignment.centerLeft),
+              child: const Text(
+                'Feedback',
+                style: TextStyle(fontSize: 16, color: Colors.deepOrangeAccent),
+              ),
+            ),
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(alignment: Alignment.centerLeft),
+              child: const Text(
+                'Reportar Bug',
+                style: TextStyle(fontSize: 16, color: Colors.deepOrangeAccent),
+              ),
+            ),
           ],
         ),
       ),
@@ -135,3 +154,4 @@ class _InfoPageState extends State<InfoPage> {
     );
   }
 }
+
