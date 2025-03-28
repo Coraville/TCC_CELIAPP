@@ -1,4 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class DateInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    String text = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (text.length > 8) {
+      text = text.substring(0, 8);
+    }
+
+    String formatted = '';
+    for (int i = 0; i < text.length; i++) {
+      if (i == 2 || i == 4) {
+        formatted += '/';
+      }
+      formatted += text[i];
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,28 +36,11 @@ class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 0;
   bool hasAllergies = false;
   List<String> selectedAllergens = [];
-  final TextEditingController nameController = TextEditingController(text: "Nome Sobrenome");
-  final TextEditingController birthDateController = TextEditingController(text: "DD/MM/AA");
-  final TextEditingController emailController = TextEditingController(text: "seuemail@email.com.br");
-  final TextEditingController passwordController = TextEditingController(text: "****");
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController birthDateController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final TextEditingController otherAllergenController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    nameController.addListener(() {
-      if (nameController.text == "Nome Sobrenome") nameController.clear();
-    });
-    birthDateController.addListener(() {
-      if (birthDateController.text == "DD/MM/AA") birthDateController.clear();
-    });
-    emailController.addListener(() {
-      if (emailController.text == "seuemail@email.com.br") emailController.clear();
-    });
-    passwordController.addListener(() {
-      if (passwordController.text == "****") passwordController.clear();
-    });
-  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -112,7 +120,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil'), backgroundColor: Colors.deepOrangeAccent),
+      appBar: AppBar(title: const Text(''), backgroundColor: Colors.deepOrangeAccent),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -136,7 +144,15 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 10),
               TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nome")),
-              TextField(controller: birthDateController, decoration: const InputDecoration(labelText: "Data de Nascimento")),
+              TextField(
+                controller: birthDateController,
+                decoration: const InputDecoration(labelText: "Data de Nascimento"),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  DateInputFormatter(),
+                ],
+              ),
               TextField(controller: emailController, decoration: const InputDecoration(labelText: "E-mail")),
               TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(labelText: "Senha")),
               const SizedBox(height: 20),
@@ -215,3 +231,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+
+
+
