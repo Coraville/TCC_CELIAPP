@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'map_page.dart';
+import 'recipes_page.dart';
+import 'profile_page.dart';
+import 'info_page.dart';
 
 class ShoppingListPage extends StatefulWidget {
   const ShoppingListPage({super.key});
@@ -30,6 +34,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         Navigator.pushNamed(context, '/recipes');
         break;
       case 3:
+        Navigator.pushNamed(context, '/shopping_list');
+        break;
+      case 4:
         Navigator.pushNamed(context, '/info');
         break;
     }
@@ -67,6 +74,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.book),
             label: 'Receitas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Lista de Compras',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.info),
@@ -226,3 +237,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 }
+
+
+
+
+

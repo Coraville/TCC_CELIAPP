@@ -6,23 +6,20 @@ import 'recipes_page.dart';
 import 'info_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CeliApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CeliApp extends StatelessWidget {
+  const CeliApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CeliApp',
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      initialRoute: '/',
+      theme: ThemeData(primarySwatch: Colors.deepOrange),
+      initialRoute: '/info',
       routes: {
-        '/': (context) => const ShoppingListPage(),
+        '/shopping_list': (context) => const ShoppingListPage(),
         '/profile': (context) => const ProfilePage(),
         '/map': (context) => const MapPage(),
         '/recipes': (context) => const RecipesPage(),
@@ -31,3 +28,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

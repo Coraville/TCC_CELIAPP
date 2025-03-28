@@ -26,7 +26,10 @@ class _ProfilePageState extends State<ProfilePage> {
         Navigator.pushNamed(context, '/recipes');
         break;
       case 3:
-        Navigator.pushNamed(context, '/info');
+        Navigator.pushNamed(context, '/info'); // Navegação para Informações
+        break;
+      case 4:
+        Navigator.pushNamed(context, '/shopping_list'); // Navegação para Lista de Compras
         break;
     }
   }
@@ -45,10 +48,11 @@ class _ProfilePageState extends State<ProfilePage> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Compras'),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Lista de Compras'), // Alterado para ícone de lista
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
       ),
     );
   }
 }
+
