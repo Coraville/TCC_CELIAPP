@@ -52,7 +52,7 @@ class _InfoPageState extends State<InfoPage> {
         title: const Text(''),
         backgroundColor: Colors.deepOrangeAccent,
       ),
-      body: Padding(
+      body: SingleChildScrollView(  // Adicionando rolagem
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // Alinha tudo à esquerda
@@ -154,4 +154,5 @@ class _InfoPageState extends State<InfoPage> {
     );
   }
 }
+
 

@@ -49,13 +49,15 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         title: const Text('Lista de Compras'),
         backgroundColor: Colors.deepOrangeAccent,
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-          _createNewListButton(),
-          const SizedBox(height: 20),
-          Expanded(child: _shoppingLists()),
-        ],
+      body: SingleChildScrollView(  // Aqui está a mudança
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            _createNewListButton(),
+            const SizedBox(height: 20),
+            _shoppingLists(),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -237,6 +239,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 }
+
 
 
 
