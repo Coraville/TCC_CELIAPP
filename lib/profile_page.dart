@@ -26,10 +26,10 @@ class _ProfilePageState extends State<ProfilePage> {
         Navigator.pushNamed(context, '/recipes');
         break;
       case 3:
-        Navigator.pushNamed(context, '/info'); // Navegação para Informações
+        Navigator.pushNamed(context, '/shopping_list');
         break;
       case 4:
-        Navigator.pushNamed(context, '/shopping_list'); // Navegação para Lista de Compras
+        Navigator.pushNamed(context, '/info');
         break;
     }
   }

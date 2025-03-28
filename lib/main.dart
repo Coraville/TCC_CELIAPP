@@ -17,7 +17,7 @@ class CeliApp extends StatelessWidget {
     return MaterialApp(
       title: 'CeliApp',
       theme: ThemeData(primarySwatch: Colors.deepOrange),
-      initialRoute: '/info',
+      initialRoute: '/map',
       routes: {
         '/shopping_list': (context) => const ShoppingListPage(),
         '/profile': (context) => const ProfilePage(),

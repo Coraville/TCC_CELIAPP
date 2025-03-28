@@ -30,10 +30,10 @@ class _MapPageState extends State<MapPage> {
         Navigator.pushNamed(context, '/recipes');
         break;
       case 3:
-        Navigator.pushNamed(context, '/info');
+        Navigator.pushNamed(context, '/shopping_list');
         break;
       case 4:
-        Navigator.pushNamed(context, '/shopping_list');
+        Navigator.pushNamed(context, '/info');
         break;
     }
   }

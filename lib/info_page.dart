@@ -13,7 +13,7 @@ class InfoPage extends StatefulWidget {
 }
 
 class _InfoPageState extends State<InfoPage> {
-  int _selectedIndex = 3;
+  int _selectedIndex = 4;
 
   // Função para abrir o link no navegador
   Future<void> _launchURL() async {
@@ -53,77 +53,71 @@ class _InfoPageState extends State<InfoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Informações'),
+        title: const Text(''),
         backgroundColor: Colors.deepOrangeAccent,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Link para o site oficial
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: GestureDetector(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Título "Informações"
+            const Text(
+              'Informações',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Arial',
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Link para o site da FENALCEBRA
+            GestureDetector(
               onTap: _launchURL,
-              child: Text(
-                'Site Oficial da FENALCEBRA',
+              child: const Text(
+                'Site Oficial: FENALCEBRA',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: Colors.deepOrangeAccent,
                   fontSize: 18,
-                  decoration: TextDecoration.underline,
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-          // Trecho da lei nº 10.674
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              '''Lei nº 10.674 - Art. 1º
-              Fica obrigatória a inclusão no rótulo dos produtos alimentícios, a informação sobre a presença de glúten em sua composição.''',
+            // Trecho da lei com formatação correta
+            const Text(
+              'LEI N° 10.674 ART. 1°',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'Fica obrigatória a inclusão no rótulo dos produtos alimentícios, a informação sobre a presença de glúten em sua composição.',
+              style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+            ),
+            const SizedBox(height: 20),
+
+            // Linha separadora
+            const Divider(color: Colors.grey, thickness: 1, height: 30),
+
+            // Versão do aplicativo e créditos
+            const Text(
+              'CeliApp v1.0',
               style: TextStyle(fontSize: 16),
             ),
-          ),
-
-          // Linha separadora
-          const Divider(color: Colors.grey, thickness: 1, height: 30),
-
-          // Versão do aplicativo e créditos
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Versão do aplicativo: 1.0',
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Créditos dos desenvolvedores:',
-                  style: TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Arthur Vinicius Mendes dos Santos',
-                  style: TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Carolina Mesquita dos Santos',
-                  style: TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Laiz Preda Torres',
-                  style: TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Mayra Olimpia Tavares',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ],
+            const SizedBox(height: 10),
+            const Text(
+              'Créditos dos desenvolvedores:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+            const SizedBox(height: 5),
+            const Text('Arthur Vinicius Mendes dos Santos', style: TextStyle(fontSize: 16)),
+            const Text('Carolina Mesquita dos Santos', style: TextStyle(fontSize: 16)),
+            const Text('Laiz Preda Torres', style: TextStyle(fontSize: 16)),
+            const Text('Mayra Olimpia Tavares', style: TextStyle(fontSize: 16)),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -131,30 +125,13 @@ class _InfoPageState extends State<InfoPage> {
         selectedItemColor: Colors.deepOrangeAccent,
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Mapa',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Receitas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Lista de Compras',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'Informações',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Lista de Compras'),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
       ),
     );
   }
 }
-
-
