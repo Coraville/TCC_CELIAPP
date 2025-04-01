@@ -41,7 +41,7 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa'), backgroundColor: Colors.deepOrangeAccent),
+      appBar: AppBar(title: const Text('Mapa'), backgroundColor: Color(0xFFE38854)),
       body: const Center(child: Text('Página do Mapa')),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

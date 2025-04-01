@@ -46,8 +46,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lista de Compras'),
-        backgroundColor: Colors.deepOrangeAccent,
+        title: const Text(''),
+        backgroundColor: Color(0xFFE38854),
       ),
       body: Column(
         children: [

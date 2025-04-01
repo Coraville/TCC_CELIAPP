@@ -50,7 +50,7 @@ class _InfoPageState extends State<InfoPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
-        backgroundColor: Colors.deepOrangeAccent,
+        backgroundColor: Color(0xFFE38854),
       ),
       body: SingleChildScrollView(  // Adicionando rolagem
         padding: const EdgeInsets.all(16.0),
