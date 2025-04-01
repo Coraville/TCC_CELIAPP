@@ -49,15 +49,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         title: const Text('Lista de Compras'),
         backgroundColor: Colors.deepOrangeAccent,
       ),
-      body: SingleChildScrollView(  // Aqui está a mudança
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            _createNewListButton(),
-            const SizedBox(height: 20),
-            _shoppingLists(),
-          ],
-        ),
+      body: Column(
+        children: [
+          const SizedBox(height: 20),
+          _createNewListButton(),
+          const SizedBox(height: 20),
+          _shoppingLists(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -125,6 +123,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             ),
             TextButton(
               onPressed: () {
+                listNameController.clear();
                 Navigator.pop(context);
               },
               child: const Text('Cancelar'),
@@ -137,6 +136,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
   Widget _shoppingLists() {
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: shoppingLists.length,
       itemBuilder: (context, index) {
         return Card(
@@ -162,9 +163,18 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                   ),
               ],
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => _showEditListDialog(index),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _showEditListDialog(index),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _showDeleteListDialog(index),
+                ),
+              ],
             ),
             onTap: () => _showAddItemDialog(index),
           ),
@@ -229,6 +239,36 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             ),
             TextButton(
               onPressed: () {
+                itemController.clear();
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteListDialog(int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Excluir Lista'),
+          content: Text('Deseja realmente excluir a lista "${shoppingLists[index]['name']}"?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  shoppingLists.removeAt(index);
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Excluir'),
+            ),
+            TextButton(
+              onPressed: () {
                 Navigator.pop(context);
               },
               child: const Text('Cancelar'),
@@ -239,6 +279,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 }
+
 
 
 
