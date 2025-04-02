@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195014675867",
+    "project_id": "celiapp-4b834",
+    "storage_bucket": "celiapp-4b834.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195014675867:android:ee9c379dbfc961d50a253e",
+        "android_client_info": {
+          "package_name": "com.example.celiapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc45Emy6qQKEMkrfXjKyBgwJD_Rd7xCoA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
