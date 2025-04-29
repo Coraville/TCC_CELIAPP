@@ -4,14 +4,14 @@ plugins {
     id("com.google.gms.google-services")
     // END: FlutterFire Configuration
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // O Flutter Gradle Plugin deve ser aplicado após os plugins do Android e Kotlin.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.celiapp"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 35 // Versão mais recente recomendada
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -23,20 +23,20 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.celiapp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 23 // Firebase exige pelo menos 23
+        targetSdk = 35 // Sempre use a versão mais recente suportada
+        versionCode = 1 // Número de versão do app
+        versionName = "1.0.0" // Nome da versão do app
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Usa as configurações padrão de otimização do Android
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
+            // Assina com a chave de debug por enquanto, para rodar o app em modo release
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -45,3 +45,4 @@ android {
 flutter {
     source = "../.."
 }
+

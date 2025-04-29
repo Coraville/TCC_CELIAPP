@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'shopping_list_page.dart'; // Tela principal após login
-import 'register_page.dart'; // Importa a página de registro
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController senhaController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -18,14 +17,14 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
   String? errorMessage;
 
-  Future<void> _login() async {
+  Future<void> _register() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
       );
@@ -76,10 +75,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
             const SizedBox(height: 10),
-            _loginBtn(),
-            const SizedBox(height: 70),
             _registerBtn(),
-            _forgotpass(),
+            const SizedBox(height: 70),
+            _loginRedirectBtn(),
           ],
         ),
       ),
@@ -112,14 +110,14 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _loginBtn() {
+  Widget _registerBtn() {
     return TextButton(
-      onPressed: isLoading ? null : _login,
+      onPressed: isLoading ? null : _register,
       child:
           isLoading
               ? const CircularProgressIndicator()
               : const Text(
-                'login',
+                'Registrar',
                 style: TextStyle(
                   fontFamily: 'RobotoFlex',
                   color: Colors.deepOrangeAccent,
@@ -129,31 +127,13 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _registerBtn() {
+  Widget _loginRedirectBtn() {
     return TextButton(
       onPressed: () {
-        // Redireciona para a página de registro
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const RegisterPage()),
-        );
+        Navigator.pop(context); // Volta para a tela de login
       },
       child: const Text(
-        'registre-se',
-        style: TextStyle(
-          fontFamily: 'RobotoFlex',
-          color: Colors.deepOrangeAccent,
-          fontSize: 15,
-        ),
-      ),
-    );
-  }
-
-  Widget _forgotpass() {
-    return TextButton(
-      onPressed: () {},
-      child: const Text(
-        'esqueceu a senha?',
+        'Já tem uma conta? Faça login',
         style: TextStyle(
           fontFamily: 'RobotoFlex',
           color: Colors.deepOrangeAccent,
