@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'recipes_page.dart'; // Importa a página de receitas
+import 'shopping_list_page.dart';
+import 'map_page.dart';
+import 'profile_page.dart';
+import 'info_page.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -13,9 +18,12 @@ class _LoadingScreenState extends State<LoadingScreen> {
   void initState() {
     super.initState();
 
-    // Após 6 segundos, navega para a tela de login
+    // Após 6 segundos, navega para a página de receitas
     Future.delayed(const Duration(seconds: 6), () {
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const RecipesPage()),
+      );
     });
   }
 
@@ -31,7 +39,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
             top: 20,
             child: Transform(
               alignment: Alignment.center,
-              transform: Matrix4.identity()..scale(-1.0, 1.0), // Espelhamento horizontal
+              transform:
+                  Matrix4.identity()
+                    ..scale(-1.0, 1.0), // Espelhamento horizontal
               child: Image.asset(
                 'assets/images/trigo.png',
                 width: 150,
@@ -66,18 +76,14 @@ class _LoadingScreenState extends State<LoadingScreen> {
                     color: Colors.deepOrangeAccent,
                   ),
                   child: AnimatedTextKit(
-                    animatedTexts: [
-                      WavyAnimatedText('CeliApp'),
-                    ],
+                    animatedTexts: [WavyAnimatedText('CeliApp')],
                     isRepeatingAnimation: false, // Executa uma única vez
                   ),
                 ),
                 const SizedBox(height: 30),
 
                 // Indicador de carregamento simples
-                const CircularProgressIndicator(
-                  color: Colors.deepOrangeAccent,
-                ),
+                const CircularProgressIndicator(color: Colors.deepOrangeAccent),
               ],
             ),
           ),
@@ -86,11 +92,3 @@ class _LoadingScreenState extends State<LoadingScreen> {
     );
   }
 }
-
-
-
-
-
-
-
-

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'recipes_page.dart';
+import 'shopping_list_page.dart';
+import 'map_page.dart';
+import 'profile_page.dart';
+import 'info_page.dart';
 
 class InfoPage extends StatefulWidget {
   const InfoPage({super.key});
@@ -14,10 +19,17 @@ class _InfoPageState extends State<InfoPage> {
   // Função para abrir o link no navegador
   Future<void> _launchURL() async {
     const url = 'https://www.fenacelbra.com.br/';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Não foi possível abrir o link';
+    final Uri uri = Uri.parse(url);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        throw 'Não foi possível abrir o link';
+      }
+    } catch (e) {
+      print("Erro ao abrir URL: $e");
+      // Exibir um alerta ou um Snackbar para o usuário
     }
   }
 
@@ -48,14 +60,13 @@ class _InfoPageState extends State<InfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: Color(0xFFE38854),
-      ),
-      body: SingleChildScrollView(  // Adicionando rolagem
+      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFE38854)),
+      body: SingleChildScrollView(
+        // Adicionando rolagem
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Alinha tudo à esquerda
+          crossAxisAlignment:
+              CrossAxisAlignment.start, // Alinha tudo à esquerda
           children: [
             // Título "Informações"
             const Text(
@@ -74,10 +85,7 @@ class _InfoPageState extends State<InfoPage> {
               onTap: _launchURL,
               child: const Text(
                 'Site Oficial da FENALCEBRA',
-                style: TextStyle(
-                  color: Colors.deepOrangeAccent,
-                  fontSize: 18,
-                ),
+                style: TextStyle(color: Colors.deepOrangeAccent, fontSize: 18),
               ),
             ),
             const SizedBox(height: 20),
@@ -103,18 +111,21 @@ class _InfoPageState extends State<InfoPage> {
             const Divider(color: Colors.grey, thickness: 1, height: 30),
 
             // Versão do aplicativo e créditos
-            const Text(
-              'CeliApp v1.0',
-              style: TextStyle(fontSize: 16),
-            ),
+            const Text('CeliApp v1.0', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 10),
             const Text(
               'Desenvolvido por:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            const Text('Arthur Vinicius Mendes dos Santos', style: TextStyle(fontSize: 16)),
-            const Text('Carolina Mesquita dos Santos', style: TextStyle(fontSize: 16)),
+            const Text(
+              'Arthur Vinicius Mendes dos Santos',
+              style: TextStyle(fontSize: 16),
+            ),
+            const Text(
+              'Carolina Mesquita dos Santos',
+              style: TextStyle(fontSize: 16),
+            ),
             const Text('Laiz Preda Torres', style: TextStyle(fontSize: 16)),
             const Text('Mayra Olimpia Tavares', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 12),
@@ -147,12 +158,13 @@ class _InfoPageState extends State<InfoPage> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Lista de Compras'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Lista de Compras',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
       ),
     );
   }
 }
-
-

@@ -45,10 +45,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: Color(0xFFE38854),
-      ),
+      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFE38854)),
       body: Column(
         children: [
           const SizedBox(height: 20),
@@ -63,26 +60,14 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         selectedItemColor: Colors.deepOrangeAccent,
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Mapa',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Receitas',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'Lista de Compras',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'Informações',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
       ),
     );
@@ -108,13 +93,18 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           title: const Text('Nome da Nova Lista'),
           content: TextField(
             controller: listNameController,
-            decoration: const InputDecoration(hintText: 'Digite o nome da lista'),
+            decoration: const InputDecoration(
+              hintText: 'Digite o nome da lista',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 setState(() {
-                  shoppingLists.add({'name': listNameController.text, 'items': []});
+                  shoppingLists.add({
+                    'name': listNameController.text,
+                    'items': [],
+                  });
                 });
                 listNameController.clear();
                 Navigator.pop(context);
@@ -184,7 +174,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   }
 
   void _showEditListDialog(int index) {
-    TextEditingController editController = TextEditingController(text: shoppingLists[index]['name']);
+    TextEditingController editController = TextEditingController(
+      text: shoppingLists[index]['name'],
+    );
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -192,7 +184,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           title: const Text('Editar Nome da Lista'),
           content: TextField(
             controller: editController,
-            decoration: const InputDecoration(hintText: 'Digite o novo nome da lista'),
+            decoration: const InputDecoration(
+              hintText: 'Digite o novo nome da lista',
+            ),
           ),
           actions: [
             TextButton(
@@ -224,13 +218,18 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           title: const Text('Adicionar Item à Lista'),
           content: TextField(
             controller: itemController,
-            decoration: const InputDecoration(hintText: 'Digite o nome do item'),
+            decoration: const InputDecoration(
+              hintText: 'Digite o nome do item',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 setState(() {
-                  shoppingLists[index]['items'].add({'name': itemController.text, 'checked': false});
+                  shoppingLists[index]['items'].add({
+                    'name': itemController.text,
+                    'checked': false,
+                  });
                 });
                 itemController.clear();
                 Navigator.pop(context);
@@ -256,7 +255,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Excluir Lista'),
-          content: Text('Deseja realmente excluir a lista "${shoppingLists[index]['name']}"?'),
+          content: Text(
+            'Deseja realmente excluir a lista "${shoppingLists[index]['name']}"?',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -279,10 +280,3 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 }
-
-
-
-
-
-
-
