@@ -61,7 +61,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Scanner',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),

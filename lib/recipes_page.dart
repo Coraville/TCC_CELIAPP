@@ -23,12 +23,7 @@ class _RecipesPageState extends State<RecipesPage> {
       'rating': 4,
       'saved': false,
     },
-    {
-      'name': 'Feijoada',
-      'user': 'Maria Oliveira',
-      'rating': 5,
-      'saved': false,
-    },
+    {'name': 'Feijoada', 'user': 'Maria Oliveira', 'rating': 5, 'saved': false},
     {
       'name': 'Sopa de Legumes',
       'user': 'Carlos Almeida',
@@ -74,10 +69,14 @@ class _RecipesPageState extends State<RecipesPage> {
       if (query.isEmpty) {
         filteredRecipes = allRecipes;
       } else {
-        filteredRecipes = allRecipes
-            .where((recipe) =>
-            recipe['name'].toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        filteredRecipes =
+            allRecipes
+                .where(
+                  (recipe) => recipe['name'].toLowerCase().contains(
+                    query.toLowerCase(),
+                  ),
+                )
+                .toList();
       }
     });
   }
@@ -88,7 +87,9 @@ class _RecipesPageState extends State<RecipesPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Criar Nova Receita'),
-          content: const Text('Aqui será a lógica para criar uma nova receita.'),
+          content: const Text(
+            'Aqui será a lógica para criar uma nova receita.',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -105,16 +106,9 @@ class _RecipesPageState extends State<RecipesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: Color(0xFFE38854),
-      ),
+      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFE38854)),
       body: Column(
-        children: [
-          _searchField(),
-          _recipeList(),
-          _createNewRecipeButton(),
-        ],
+        children: [_searchField(), _recipeList(), _createNewRecipeButton()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -123,9 +117,15 @@ class _RecipesPageState extends State<RecipesPage> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Scanner',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Lista de Compras'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Lista de Compras',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
       ),
@@ -173,9 +173,7 @@ class _RecipesPageState extends State<RecipesPage> {
                   Row(
                     children: List.generate(5, (i) {
                       return Icon(
-                        i < recipe['rating']
-                            ? Icons.star
-                            : Icons.star_border,
+                        i < recipe['rating'] ? Icons.star : Icons.star_border,
                         color: Colors.yellow[700],
                         size: 20,
                       );
@@ -210,12 +208,12 @@ class _RecipesPageState extends State<RecipesPage> {
           _showCreateRecipeDialog(); // Abre o popup de criação de nova receita
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.deepOrangeAccent, // Substituí "primary" por "backgroundColor"
+          backgroundColor:
+              Colors
+                  .deepOrangeAccent, // Substituí "primary" por "backgroundColor"
         ),
         child: const Text('Criar Nova Receita'),
       ),
     );
   }
 }
-
-

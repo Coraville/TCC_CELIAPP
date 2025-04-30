@@ -24,7 +24,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.celiapp"
-        minSdk = 23 // Firebase exige pelo menos 23
+        minSdk = 24 // Firebase exige pelo menos 23
         targetSdk = 35 // Sempre use a versão mais recente suportada
         versionCode = 1 // Número de versão do app
         versionName = "1.0.0" // Nome da versão do app

@@ -41,6 +41,13 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   firebase_auth: ^5.5.2
+  mobile_scanner: ^3.5.0
+  lottie: ^2.7.0
+  animate_do: ^2.1.0
+  flutter_sound: ^9.28.0
+  http: ^1.3.0
+
+
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +74,10 @@ flutter:
     - assets/images/trigo.png
     - assets/images/google_logo.png
     - assets/images/facebook_logo.png
+    - assets/animations/success.json
+    - assets/animations/error.json
+    - assets/sounds/success.mp3
+    - assets/sounds/error.mp3
 
   # To add assets to your application, add an assets section, like this:
   # assets:
