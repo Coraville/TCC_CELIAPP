@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert'; // Para decodificar a resposta JSON
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:lottie/lottie.dart';
@@ -15,7 +15,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   int _selectedIndex = 1;
-  bool _isScanning = false;
+  bool _isScanning = true;
   String _status = 'idle'; // idle, gluten, sem_gluten
   final FlutterSoundPlayer _player = FlutterSoundPlayer();
 
@@ -46,14 +46,12 @@ class _MapPageState extends State<MapPage> {
   void _playSound(String sound) async {
     if (!_player.isPlaying) {
       await _player.startPlayer(
-        fromURI:
-            'assets/sounds/$sound.mp3', // Adicione seus arquivos de som no diretório assets/sounds
+        fromURI: 'assets/sounds/$sound.mp3',
         codec: Codec.mp3,
       );
     }
   }
 
-  // Função para verificar o produto usando o OpenFoodFacts
   Future<void> verificarProduto(String codigo) async {
     final url = Uri.parse(
       'https://world.openfoodfacts.org/api/v0/product/$codigo.json',
@@ -63,7 +61,6 @@ class _MapPageState extends State<MapPage> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
 
-      // Verifica se o produto possui informações de glúten
       final isGlutenFree =
           data['product'] != null &&
           data['product']['ingredients_text'] != null &&
@@ -76,21 +73,19 @@ class _MapPageState extends State<MapPage> {
         setState(() {
           _status = 'sem_gluten';
         });
-        _playSound('success'); // Toca som de sucesso
+        _playSound('success');
       } else {
         setState(() {
           _status = 'gluten';
         });
-        _playSound('error'); // Toca som de erro
+        _playSound('error');
       }
     } else {
       setState(() {
         _status = 'idle';
       });
-      print('Erro ao obter dados do produto');
     }
 
-    // Restaura o estado após 5 segundos
     Timer(const Duration(seconds: 5), () {
       setState(() {
         _status = 'idle';
@@ -102,77 +97,99 @@ class _MapPageState extends State<MapPage> {
   Widget _buildResultado() {
     if (_status == 'sem_gluten') {
       return Container(
-        color: Colors.green,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset('assets/images/success.json', width: 150, height: 150),
-            const SizedBox(height: 20),
-            const Text(
-              'SEM GLÚTEN!',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        width: double.infinity,
+        height: double.infinity,
+        color: const Color(0xFF98FF96),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                'assets/images/success.json',
+                width: 150,
+                height: 150,
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              const Text(
+                'SEM GLÚTEN!',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     } else if (_status == 'gluten') {
       return Container(
-        color: Colors.red,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset('assets/images/error.json', width: 150, height: 150),
-            const SizedBox(height: 20),
-            const Text(
-              'CUIDADO: POSSUI GLÚTEN!',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        width: double.infinity,
+        height: double.infinity,
+        color: const Color(0xFFB21613),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset('assets/images/error.json', width: 150, height: 150),
+              const SizedBox(height: 20),
+              const Text(
+                'CUIDADO: CONTÉM GLUTÉN',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     } else {
-      return Column(
+      return Stack(
         children: [
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _isScanning = true;
-              });
+          MobileScanner(
+            controller: MobileScannerController(
+              detectionSpeed: DetectionSpeed.normal,
+            ),
+            onDetect: (capture) {
+              final barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                final String? code = barcodes.first.rawValue;
+                if (code != null && _isScanning) {
+                  setState(() => _isScanning = false);
+                  verificarProduto(code);
+                }
+              }
             },
-            child: const Text('Escanear Código de Barras'),
           ),
-          const SizedBox(height: 20),
-          _isScanning
-              ? SizedBox(
-                width: 300,
-                height: 300,
-                child: MobileScanner(
-                  onDetect: (capture) {
-                    final barcodes = capture.barcodes;
-                    if (barcodes.isNotEmpty) {
-                      final String? code = barcodes.first.rawValue;
-                      if (code != null) {
-                        setState(() => _isScanning = false);
-                        verificarProduto(
-                          code,
-                        ); // Chama a verificação após escanear
-                      }
-                    }
-                  },
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: _onItemTapped,
+              selectedItemColor: Colors.deepOrangeAccent,
+              unselectedItemColor: Colors.grey,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Perfil',
                 ),
-              )
-              : const SizedBox.shrink(),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.qr_code_scanner),
+                  label: 'Scanner',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.book),
+                  label: 'Receitas',
+                ),
+                BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Lista'),
+                BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Info'),
+              ],
+            ),
+          ),
         ],
       );
     }
@@ -181,60 +198,20 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
-  }
-
-  Future<void> _initializePlayer() async {
-    try {
-      await _player.startPlayer();
-    } catch (e) {
-      print("Erro ao inicializar o player de áudio: $e");
-    }
   }
 
   @override
   void dispose() {
-    _disposePlayer();
+    _player.stopPlayer();
     super.dispose();
-  }
-
-  Future<void> _disposePlayer() async {
-    try {
-      await _player.stopPlayer();
-    } catch (e) {
-      print("Erro ao parar o player de áudio: $e");
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scanner de Produtos'),
-        backgroundColor: const Color(0xFFE38854),
-      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
         child: _buildResultado(),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.deepOrangeAccent,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'Scanner',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Lista de Compras',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
-        ],
       ),
     );
   }

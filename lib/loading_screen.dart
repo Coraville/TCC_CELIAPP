@@ -1,10 +1,5 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
-import 'recipes_page.dart'; // Importa a página de receitas
-import 'shopping_list_page.dart';
-import 'map_page.dart';
-import 'profile_page.dart';
-import 'info_page.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -13,82 +8,123 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen> {
+class _LoadingScreenState extends State<LoadingScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _rotationController;
+  late AnimationController _movementController;
+  late List<Animation<double>> _lettersAnimations;
+
+  final List<String> _text = ['C', 'e', 'l', 'i', 'A', 'p', 'p'];
+
   @override
   void initState() {
     super.initState();
 
-    // Após 6 segundos, navega para a página de receitas
+    // Animação de rotação
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+
+    // Animação de movimento horizontal
+    _movementController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    // Inicializa as animações para mover as letras
+    _lettersAnimations = List.generate(_text.length, (index) {
+      return Tween<double>(begin: 0.0, end: 30.0 * index.toDouble()).animate(
+        CurvedAnimation(parent: _movementController, curve: Curves.easeOut),
+      );
+    });
+
+    // Inicia a animação de movimento após a rotação
+    Future.delayed(const Duration(seconds: 3), () {
+      _movementController.forward();
+    });
+
+    // Após 6 segundos, navega para a próxima tela
     Future.delayed(const Duration(seconds: 6), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const RecipesPage()),
+        MaterialPageRoute(
+          builder: (context) => const RecipesPage(),
+        ), // Substitua pela tela desejada
       );
     });
   }
 
   @override
+  void dispose() {
+    _rotationController.dispose();
+    _movementController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4E1C1), // Fundo bege claro
+      backgroundColor: Colors.white, // Fundo branco
       body: Stack(
         children: [
-          // Ramo de trigo no canto superior esquerdo (espelhado horizontalmente)
-          Positioned(
-            left: 20,
-            top: 20,
-            child: Transform(
-              alignment: Alignment.center,
-              transform:
-                  Matrix4.identity()
-                    ..scale(-1.0, 1.0), // Espelhamento horizontal
-              child: Image.asset(
-                'assets/images/trigo.png',
-                width: 150,
-                height: 150,
-              ),
-            ),
-          ),
-
-          // Ramo de trigo no canto inferior direito (rotacionado 90°)
-          Positioned(
-            right: 20,
-            bottom: 20,
-            child: Transform.rotate(
-              angle: 1.5708, // 90 graus em radianos
-              child: Image.asset(
-                'assets/images/trigo.png',
-                width: 150,
-                height: 150,
-              ),
-            ),
-          ),
-
           // Animação do nome "CeliApp"
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DefaultTextStyle(
-                  style: const TextStyle(
-                    fontSize: 40.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepOrangeAccent,
-                  ),
-                  child: AnimatedTextKit(
-                    animatedTexts: [WavyAnimatedText('CeliApp')],
-                    isRepeatingAnimation: false, // Executa uma única vez
+                AnimatedBuilder(
+                  animation: _rotationController,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle:
+                          _rotationController.value *
+                          2 *
+                          3.1415927, // 360 graus
+                      child: child,
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_text.length, (index) {
+                      return AnimatedBuilder(
+                        animation: _lettersAnimations[index],
+                        builder: (context, child) {
+                          return Transform.translate(
+                            offset: Offset(0, _lettersAnimations[index].value),
+                            child: child,
+                          );
+                        },
+                        child: Text(
+                          _text[index],
+                          style: TextStyle(
+                            fontSize: 38,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Krona One',
+                            color: Colors.deepOrangeAccent,
+                          ),
+                        ),
+                      );
+                    }),
                   ),
                 ),
-                const SizedBox(height: 30),
-
-                // Indicador de carregamento simples
-                const CircularProgressIndicator(color: Colors.deepOrangeAccent),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class RecipesPage extends StatelessWidget {
+  const RecipesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Recipes Page")),
+      body: const Center(child: Text("Welcome to Recipes Page!")),
     );
   }
 }
