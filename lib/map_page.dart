@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:lottie/lottie.dart';
-import 'package:flutter_sound/flutter_sound.dart';
-import 'package:http/http.dart' as http;
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -15,9 +14,8 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   int _selectedIndex = 1;
-  bool _isScanning = true;
+  bool _isScanning = false;
   String _status = 'idle'; // idle, gluten, sem_gluten
-  final FlutterSoundPlayer _player = FlutterSoundPlayer();
 
   void _onItemTapped(int index) {
     setState(() {
@@ -43,46 +41,52 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _playSound(String sound) async {
-    if (!_player.isPlaying) {
-      await _player.startPlayer(
-        fromURI: 'assets/sounds/$sound.mp3',
-        codec: Codec.mp3,
-      );
-    }
-  }
-
   Future<void> verificarProduto(String codigo) async {
-    final url = Uri.parse(
-      'https://world.openfoodfacts.org/api/v0/product/$codigo.json',
-    );
-    final response = await http.get(url);
+    setState(() {
+      _status = 'checking';
+    });
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+    final url = 'https://br.openfoodfacts.org/api/v0/product/$codigo.json';
 
-      final isGlutenFree =
-          data['product'] != null &&
-          data['product']['ingredients_text'] != null &&
-          data['product']['ingredients_text'].toLowerCase().contains(
-                'gluten',
-              ) ==
-              false;
+    try {
+      final response = await http.get(Uri.parse(url));
 
-      if (isGlutenFree) {
-        setState(() {
-          _status = 'sem_gluten';
-        });
-        _playSound('success');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final product = data['product'];
+
+        if (product != null) {
+          final allergens = List<String>.from(product['allergens_tags'] ?? []);
+          final labels = List<String>.from(product['labels_tags'] ?? []);
+          final ingredients =
+              (product['ingredients_text'] ?? '').toString().toLowerCase();
+
+          final hasGlutenTag =
+              allergens.contains('en:gluten') || labels.contains('en:gluten');
+          final containsWordGluten = ingredients.contains('gluten');
+
+          if (hasGlutenTag || containsWordGluten) {
+            setState(() {
+              _status = 'gluten';
+            });
+          } else {
+            setState(() {
+              _status = 'sem_gluten';
+            });
+          }
+        } else {
+          setState(() {
+            _status = 'sem_gluten'; // Produto não encontrado
+          });
+        }
       } else {
         setState(() {
-          _status = 'gluten';
+          _status = 'sem_gluten'; // Erro de resposta
         });
-        _playSound('error');
       }
-    } else {
+    } catch (e) {
       setState(() {
-        _status = 'idle';
+        _status = 'sem_gluten'; // Erro de conexão ou parsing
       });
     }
 
@@ -97,121 +101,121 @@ class _MapPageState extends State<MapPage> {
   Widget _buildResultado() {
     if (_status == 'sem_gluten') {
       return Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: const Color(0xFF98FF96),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/images/success.json',
-                width: 150,
-                height: 150,
+        color: Colors.green,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/animations/success.json',
+              width: 150,
+              height: 150,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'SEM GLÚTEN!',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'SEM GLÚTEN!',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     } else if (_status == 'gluten') {
       return Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: const Color(0xFFB21613),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset('assets/images/error.json', width: 150, height: 150),
-              const SizedBox(height: 20),
-              const Text(
-                'CUIDADO: CONTÉM GLUTÉN',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+        color: Colors.red,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/animations/error.json',
+              width: 150,
+              height: 150,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'CUIDADO: POSSUI GLÚTEN!',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
+    } else if (_status == 'checking') {
+      return Center(child: CircularProgressIndicator());
     } else {
-      return Stack(
+      return Column(
         children: [
-          MobileScanner(
-            controller: MobileScannerController(
-              detectionSpeed: DetectionSpeed.normal,
-            ),
-            onDetect: (capture) {
-              final barcodes = capture.barcodes;
-              if (barcodes.isNotEmpty) {
-                final String? code = barcodes.first.rawValue;
-                if (code != null && _isScanning) {
-                  setState(() => _isScanning = false);
-                  verificarProduto(code);
-                }
-              }
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _isScanning = true;
+              });
             },
+            child: const Text('Escanear Código de Barras'),
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNavigationBar(
-              currentIndex: _selectedIndex,
-              onTap: _onItemTapped,
-              selectedItemColor: Colors.deepOrangeAccent,
-              unselectedItemColor: Colors.grey,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Perfil',
+          const SizedBox(height: 20),
+          _isScanning
+              ? SizedBox(
+                width: 300,
+                height: 300,
+                child: MobileScanner(
+                  onDetect: (capture) {
+                    final barcodes = capture.barcodes;
+                    if (barcodes.isNotEmpty) {
+                      final String? code = barcodes.first.rawValue;
+                      if (code != null) {
+                        setState(() => _isScanning = false);
+                        verificarProduto(
+                          code,
+                        ); // Verifica o produto usando a API
+                      }
+                    }
+                  },
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.qr_code_scanner),
-                  label: 'Scanner',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.book),
-                  label: 'Receitas',
-                ),
-                BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Lista'),
-                BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Info'),
-              ],
-            ),
-          ),
+              )
+              : const SizedBox.shrink(),
         ],
       );
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _player.stopPlayer();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text(''),
+        backgroundColor: const Color(0xFFE38854),
+      ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
         child: _buildResultado(),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.deepOrangeAccent,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Scanner',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Lista de Compras',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
+        ],
       ),
     );
   }
