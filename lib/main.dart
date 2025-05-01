@@ -12,29 +12,29 @@ import 'info_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(CeliApp());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const CeliApp());
 }
 
 class CeliApp extends StatelessWidget {
+  const CeliApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CeliApp',
-      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      theme: ThemeData(primarySwatch: Colors.deepOrange),
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
         '/': (context) => AuthWrapper(),
-        '/login': (context) => LoginPage(),
-        '/loading': (context) => LoadingScreen(),
-        '/recipes': (context) => RecipesPage(),
-        '/shopping_list': (context) => ShoppingListPage(),
-        '/map': (context) => MapPage(),
-        '/profile': (context) => ProfilePage(),
-        '/info': (context) => InfoPage(),
+        '/login': (context) => const LoginPage(),
+        '/loading': (context) => const LoadingScreen(),
+        '/recipes': (context) => const RecipesPage(),
+        '/shopping_list': (context) => const ShoppingListPage(),
+        '/map': (context) => const MapPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/info': (context) => const InfoPage(),
       },
     );
   }
@@ -47,14 +47,15 @@ class AuthWrapper extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         } else if (snapshot.hasData) {
-          return LoadingScreen();
+          return const LoadingScreen();
         } else {
-          return LoginPage();
+          return const LoginPage();
         }
       },
     );
   }
 }
-
