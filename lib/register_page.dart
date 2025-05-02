@@ -1,143 +1,166 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'shopping_list_page.dart'; // Tela principal após login
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/intl.dart';
+import 'avatar_selection_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController senhaController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
-  bool isLoading = false;
-  String? errorMessage;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+
+  DateTime? _selectedDate;
+  String? _avatarPath;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
 
   Future<void> _register() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-
     try {
-      await _auth.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: senhaController.text.trim(),
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ShoppingListPage()),
+
+      final user = credential.user;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': _nameController.text.trim(),
+          'email': user.email,
+          'avatar': _avatarPath ?? '',
+          'birthdate':
+              _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
+        });
+      }
+    } catch (e) {
+      print('Erro no registro: $e');
+    }
+  }
+
+  Future<void> _registerWithGoogle() async {
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
-    } on FirebaseAuthException catch (e) {
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        final userDoc = _firestore.collection('users').doc(user.uid);
+        final snapshot = await userDoc.get();
+
+        if (!snapshot.exists) {
+          await userDoc.set({
+            'name': user.displayName ?? '',
+            'email': user.email,
+            'avatar': user.photoURL ?? '',
+            'birthdate': null,
+          });
+        }
+      }
+    } catch (e) {
+      print('Erro no login com Google: $e');
+    }
+  }
+
+  void _pickAvatar() async {
+    final selected = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => AvatarSelectionPage()),
+    );
+
+    if (selected != null) {
       setState(() {
-        errorMessage = e.message;
-      });
-    } finally {
-      setState(() {
-        isLoading = false;
+        _avatarPath = selected;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(backgroundColor: Colors.white, body: _page());
-  }
+    final avatar =
+        _avatarPath != null
+            ? Image.asset(_avatarPath!, width: 80, height: 80)
+            : const Icon(Icons.account_circle, size: 80);
 
-  Widget _page() {
-    return Padding(
-      padding: const EdgeInsets.all(40.0),
-      child: Center(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Criar conta')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              "Celiapp",
-              style: TextStyle(
-                fontFamily: 'Krona One',
-                fontSize: 32,
-                color: Colors.deepOrangeAccent,
-              ),
+            avatar,
+            TextButton(
+              onPressed: _pickAvatar,
+              child: const Text('Selecionar Avatar'),
             ),
-            const SizedBox(height: 55),
-            _inputField("e-mail", emailController),
-            const SizedBox(height: 15),
-            _inputField("senha", senhaController, isPassword: true),
-            if (errorMessage != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 14),
-              ),
-            ],
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Nome'),
+            ),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: 'Senha'),
+              obscureText: true,
+            ),
             const SizedBox(height: 10),
-            _registerBtn(),
-            const SizedBox(height: 70),
-            _loginRedirectBtn(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _inputField(
-    String hintText,
-    TextEditingController controller, {
-    isPassword = false,
-  }) {
-    var border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15.0),
-      borderSide: const BorderSide(color: Colors.grey),
-    );
-    return TextField(
-      style: const TextStyle(fontFamily: 'RobotoFlex', color: Colors.black),
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(
-          fontFamily: 'RobotoFlex',
-          color: Colors.grey,
-        ),
-        enabledBorder: border,
-        focusedBorder: border,
-        isDense: true,
-      ),
-      obscureText: isPassword,
-    );
-  }
-
-  Widget _registerBtn() {
-    return TextButton(
-      onPressed: isLoading ? null : _register,
-      child:
-          isLoading
-              ? const CircularProgressIndicator()
-              : const Text(
-                'Registrar',
-                style: TextStyle(
-                  fontFamily: 'RobotoFlex',
-                  color: Colors.deepOrangeAccent,
-                  fontSize: 15,
+            Row(
+              children: [
+                Text(
+                  _selectedDate != null
+                      ? 'Nascimento: ${DateFormat('dd/MM/yyyy').format(_selectedDate!)}'
+                      : 'Data de nascimento não selecionada',
                 ),
-              ),
-    );
-  }
-
-  Widget _loginRedirectBtn() {
-    return TextButton(
-      onPressed: () {
-        Navigator.pop(context); // Volta para a tela de login
-      },
-      child: const Text(
-        'Já tem uma conta? Faça login',
-        style: TextStyle(
-          fontFamily: 'RobotoFlex',
-          color: Colors.deepOrangeAccent,
-          fontSize: 15,
+                IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _register,
+              child: const Text('Registrar'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.login),
+              label: const Text('Entrar com Google'),
+              onPressed: _registerWithGoogle,
+            ),
+          ],
         ),
       ),
     );
