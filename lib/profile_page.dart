@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Para formatar a data
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart'; // Importar o formatter
+import 'package:intl/intl.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:celiapp/login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -73,7 +74,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = auth.currentUser;
     if (user == null) return;
 
-    // Validando a data do aniversário no formato XX/XX/XXXX
     final birthday = birthdayController.text;
     final dateFormat = DateFormat('dd/MM/yyyy');
     try {
@@ -87,7 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       await firestore.collection('users').doc(user.uid).set({
         'name': nameController.text,
-        'avatar': selectedAvatar, // Salvando o avatar no Firestore
+        'avatar': selectedAvatar,
         'birthday': birthday,
         'allergens': selectedAllergens,
       });
@@ -100,6 +100,14 @@ class _ProfilePageState extends State<ProfilePage> {
         const SnackBar(content: Text('Data de nascimento inválida')),
       );
     }
+  }
+
+  void _logout() async {
+    await auth.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
   }
 
   void _onItemTapped(int index) {
@@ -149,8 +157,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: avatarPaths.length,
-                      separatorBuilder:
-                          (context, index) => const SizedBox(width: 10),
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
                       itemBuilder: (context, index) {
                         final path = avatarPaths[index];
                         return GestureDetector(
@@ -187,7 +194,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         setState(() {
                           selectedAvatar = tempSelectedAvatar;
                         });
-                        _saveProfile(); // salva no Firestore
+                        _saveProfile();
                         Navigator.pop(context);
                       }
                     },
@@ -221,29 +228,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildAllergenChips() {
-    return Wrap(
-      spacing: 8.0,
-      children:
-          predefinedAllergens.map((allergen) {
-            final isSelected = selectedAllergens.contains(allergen);
-            return FilterChip(
-              label: Text(allergen),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    selectedAllergens.add(allergen);
-                  } else {
-                    selectedAllergens.remove(allergen);
-                  }
-                });
-              },
-            );
-          }).toList(),
-    );
-  }
-
   Widget _buildOtherAllergenInput() {
     return Row(
       children: [
@@ -269,37 +253,15 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildSelectedAllergensList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children:
-          selectedAllergens.map((allergen) {
-            return ListTile(
-              title: Text(allergen),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () {
-                  setState(() {
-                    selectedAllergens.remove(allergen);
-                  });
-                },
-              ),
-            );
-          }).toList(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (selectedAvatar == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      ); // ou uma tela de loading personalizada
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Perfil'),
+        title: const Text(''),
         backgroundColor: const Color(0xFFFF6E40),
       ),
       body: Padding(
@@ -358,14 +320,13 @@ class _ProfilePageState extends State<ProfilePage> {
               inputFormatters: [MaskTextInputFormatter(mask: '##/##/####')],
             ),
             const SizedBox(height: 20),
-            // Campo de e-mail exibido, mas não editável
             TextField(
               controller: emailController,
               decoration: const InputDecoration(labelText: 'E-mail'),
-              readOnly: true, // Campo não editável
+              readOnly: true,
             ),
             const SizedBox(height: 20),
-            Text(
+            const Text(
               'Alérgenos:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
@@ -398,26 +359,31 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(color: Colors.white),
               ),
             ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _logout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[400],
+              ),
+              child: const Text('Sair', style: TextStyle(color: Colors.white)),
+            ),
           ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.deepOrangeAccent,
+        selectedItemColor: const Color(0xFFFF6E40),
         unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Receitas'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'Scanner',
+            icon: Icon(Icons.shopping_cart),
+            label: 'Lista',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Lista de Compras',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Info'),
         ],
       ),
     );
