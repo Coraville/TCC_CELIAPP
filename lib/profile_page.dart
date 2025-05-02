@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:celiapp/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -45,45 +43,33 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController otherAllergenController = TextEditingController();
 
-  File? _image;
-  final picker = ImagePicker();
+  String? selectedAvatar;
   final user = FirebaseAuth.instance.currentUser;
 
-  Future<void> _pickImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    }
-  }
-
-  void _showImageOptions() {
+  void _showAvatarOptions() {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo),
-              title: const Text('Escolher nova foto'),
+        return GridView.builder(
+          padding: const EdgeInsets.all(10),
+          itemCount: 10,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+          ),
+          itemBuilder: (context, index) {
+            String avatarPath = 'assets/avatares/avatar${index + 1}.png';
+            return GestureDetector(
               onTap: () {
+                setState(() {
+                  selectedAvatar = avatarPath;
+                });
                 Navigator.pop(context);
-                _pickImage();
               },
-            ),
-            if (_image != null)
-              ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Remover foto'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _image = null;
-                  });
-                },
-              ),
-          ],
+              child: CircleAvatar(backgroundImage: AssetImage(avatarPath)),
+            );
+          },
         );
       },
     );
@@ -129,20 +115,24 @@ class _ProfilePageState extends State<ProfilePage> {
       "Crustáceos",
       "Outros",
     ];
+
     String? selected = await showDialog<String>(
       context: context,
       builder:
           (_) => SimpleDialog(
             title: const Text("Selecione um alérgeno"),
             children:
-                allergens.map((String allergen) {
-                  return SimpleDialogOption(
-                    onPressed: () => Navigator.pop(context, allergen),
-                    child: Text(allergen),
-                  );
-                }).toList(),
+                allergens
+                    .map(
+                      (a) => SimpleDialogOption(
+                        onPressed: () => Navigator.pop(context, a),
+                        child: Text(a),
+                      ),
+                    )
+                    .toList(),
           ),
     );
+
     if (selected != null) {
       if (selected == "Outros") {
         String? custom = await showDialog<String>(
@@ -187,16 +177,18 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Guia superior com foto e email
             Row(
               children: [
                 GestureDetector(
-                  onTap: _showImageOptions,
+                  onTap: _showAvatarOptions,
                   child: CircleAvatar(
                     radius: 35,
-                    backgroundImage: _image != null ? FileImage(_image!) : null,
+                    backgroundImage:
+                        selectedAvatar != null
+                            ? AssetImage(selectedAvatar!)
+                            : null,
                     child:
-                        _image == null
+                        selectedAvatar == null
                             ? const Icon(Icons.person, size: 35)
                             : null,
                   ),
@@ -212,8 +204,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Dados
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -264,11 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: const Text("Sim"),
                     value: true,
                     groupValue: hasAllergies,
-                    onChanged: (value) {
-                      setState(() {
-                        hasAllergies = value!;
-                      });
-                    },
+                    onChanged: (v) => setState(() => hasAllergies = v!),
                   ),
                 ),
                 Expanded(
@@ -276,12 +262,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: const Text("Não"),
                     value: false,
                     groupValue: hasAllergies,
-                    onChanged: (value) {
-                      setState(() {
-                        hasAllergies = value!;
-                        selectedAllergens.clear();
-                      });
-                    },
+                    onChanged:
+                        (v) => setState(() {
+                          hasAllergies = v!;
+                          selectedAllergens.clear();
+                        }),
                   ),
                 ),
               ],
@@ -309,8 +294,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             const SizedBox(height: 24),
-
-            // Redefinir senha
             ElevatedButton.icon(
               onPressed: _resetPassword,
               icon: const Icon(Icons.lock_reset),
@@ -321,8 +304,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 12),
-
-            // Botão logout
             ElevatedButton.icon(
               onPressed: _logout,
               icon: const Icon(Icons.logout),

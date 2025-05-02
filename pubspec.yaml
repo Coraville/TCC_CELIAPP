@@ -82,6 +82,16 @@ flutter:
     - assets/animations/error.json
     - assets/sounds/success.mp3
     - assets/sounds/error.mp3
+    - assets/avatares/avatar1.png
+    - assets/avatares/avatar2.png
+    - assets/avatares/avatar3.png
+    - assets/avatares/avatar4.png
+    - assets/avatares/avatar5.png
+    - assets/avatares/avatar6.png
+    - assets/avatares/avatar7.png
+    - assets/avatares/avatar8.png
+    - assets/avatares/avatar9.png
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
