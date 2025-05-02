@@ -159,9 +159,9 @@ class _MapPageState extends State<MapPage> {
                 _isScanning = true;
               });
             },
-            child: const Text('Escanear Código de Barras'),
+            child: const Text('Escanear'),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           _isScanning
               ? SizedBox(
                 width: 300,
@@ -192,7 +192,7 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
-        backgroundColor: const Color(0xFFE38854),
+        backgroundColor: const Color(0xFFFF6E40),
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),

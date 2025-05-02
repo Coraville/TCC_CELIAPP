@@ -106,7 +106,7 @@ class _RecipesPageState extends State<RecipesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFE38854)),
+      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFFF6E40)),
       body: Column(
         children: [_searchField(), _recipeList(), _createNewRecipeButton()],
       ),

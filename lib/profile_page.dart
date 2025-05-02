@@ -4,6 +4,14 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:celiapp/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
 
 class DateInputFormatter extends TextInputFormatter {
   @override
@@ -25,13 +33,6 @@ class DateInputFormatter extends TextInputFormatter {
       selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
-}
-
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
-
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
@@ -179,8 +180,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFE38854),
         title: const Text(''),
+        backgroundColor: const Color(0xFFFF6E40),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

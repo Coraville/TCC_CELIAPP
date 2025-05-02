@@ -60,7 +60,7 @@ class _InfoPageState extends State<InfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFE38854)),
+      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFFF6E40)),
       body: SingleChildScrollView(
         // Adicionando rolagem
         padding: const EdgeInsets.all(16.0),
