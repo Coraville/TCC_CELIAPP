@@ -93,6 +93,8 @@ flutter:
     - assets/avatares/avatar7.png
     - assets/avatares/avatar8.png
     - assets/avatares/avatar9.png
+    - assets/BDReceitas/
+
 
 
   # To add assets to your application, add an assets section, like this:

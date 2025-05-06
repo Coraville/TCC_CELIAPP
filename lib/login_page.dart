@@ -216,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
     return TextButton(
       onPressed: () {},
       child: const Text(
-        'esqueceu a senha?',
+        'Esqueceu a senha?',
         style: TextStyle(
           fontFamily: 'RobotoFlex',
           color: Colors.deepOrangeAccent,

@@ -381,7 +381,7 @@ class _ProfilePageState extends State<ProfilePage> {
           BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Receitas'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
-            label: 'Lista',
+            label: 'shopping_cart',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Info'),
         ],

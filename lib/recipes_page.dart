@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'shopping_list_page.dart';
-import 'profile_page.dart';
-import 'map_page.dart';
-import 'info_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'recipe_detail_page.dart';
+import 'add_recipe_page.dart';
 
 class RecipesPage extends StatefulWidget {
   const RecipesPage({super.key});
@@ -15,29 +15,32 @@ class _RecipesPageState extends State<RecipesPage> {
   int _selectedIndex = 2;
   TextEditingController searchController = TextEditingController();
 
-  // Lista fictícia de receitas
-  List<Map<String, dynamic>> allRecipes = [
-    {
-      'name': 'Bolo de Cenoura',
-      'user': 'João Silva',
-      'rating': 4,
-      'saved': false,
-    },
-    {'name': 'Feijoada', 'user': 'Maria Oliveira', 'rating': 5, 'saved': false},
-    {
-      'name': 'Sopa de Legumes',
-      'user': 'Carlos Almeida',
-      'rating': 3,
-      'saved': false,
-    },
-  ];
-
   List<Map<String, dynamic>> filteredRecipes = [];
 
   @override
   void initState() {
     super.initState();
-    filteredRecipes = allRecipes;
+    _fetchRecipes();
+  }
+
+  Future<void> _fetchRecipes() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final snapshot =
+        await FirebaseFirestore.instance.collection('recipes').get();
+    setState(() {
+      filteredRecipes =
+          snapshot.docs.map((doc) {
+            var data = doc.data();
+            return {
+              'name': data['name'],
+              'user': data['authorName'],
+              'rating': data['rating'] ?? 3, // Default to 3 stars if no rating
+              'image':
+                  'assets/BDReceitas/recipe_${doc.id}.png', // Use the image from assets
+              'docId': doc.id,
+            };
+          }).toList();
+    });
   }
 
   void _onItemTapped(int index) {
@@ -53,7 +56,6 @@ class _RecipesPageState extends State<RecipesPage> {
         Navigator.pushNamed(context, '/map');
         break;
       case 2:
-        Navigator.pushNamed(context, '/recipes');
         break;
       case 3:
         Navigator.pushNamed(context, '/shopping_list');
@@ -67,10 +69,10 @@ class _RecipesPageState extends State<RecipesPage> {
   void _searchRecipes(String query) {
     setState(() {
       if (query.isEmpty) {
-        filteredRecipes = allRecipes;
+        _fetchRecipes(); // Fetch all recipes if search is cleared
       } else {
         filteredRecipes =
-            allRecipes
+            filteredRecipes
                 .where(
                   (recipe) => recipe['name'].toLowerCase().contains(
                     query.toLowerCase(),
@@ -81,34 +83,121 @@ class _RecipesPageState extends State<RecipesPage> {
     });
   }
 
-  void _showCreateRecipeDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Criar Nova Receita'),
-          content: const Text(
-            'Aqui será a lógica para criar uma nova receita.',
+  Widget _searchField() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        controller: searchController,
+        decoration: InputDecoration(
+          labelText: 'Pesquisar receitas...',
+          border: OutlineInputBorder(),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => _searchRecipes(searchController.text),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Fecha o popup
-              },
-              child: const Text('Fechar'),
-            ),
-          ],
-        );
-      },
+        ),
+        onChanged: (query) => _searchRecipes(query),
+      ),
+    );
+  }
+
+  Widget _createNewRecipeButton() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddRecipePage()),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.deepOrangeAccent,
+        ),
+        child: const Text(
+          'Criar Nova Receita',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(''), backgroundColor: Color(0xFFFF6E40)),
-      body: Column(
-        children: [_searchField(), _recipeList(), _createNewRecipeButton()],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: const Color(0xFFFF6E40),
+            floating: true,
+            snap: true,
+            pinned: true,
+            expandedHeight: 50,
+            flexibleSpace: const FlexibleSpaceBar(
+              title: Text('', style: TextStyle(fontSize: 20)),
+              background: ColoredBox(color: Color(0xFFFF6E40)),
+            ),
+          ),
+          SliverToBoxAdapter(child: _searchField()),
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final recipe = filteredRecipes[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RecipeDetailPage(recipe: recipe),
+                    ),
+                  );
+                },
+                child: Hero(
+                  tag: recipe['name'], // Hero tag for animation
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 5,
+                      horizontal: 10,
+                    ),
+                    child: ListTile(
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          recipe['image'],
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      title: Text(recipe['name']),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Por: ${recipe['user']}'),
+                          Row(
+                            children: List.generate(5, (i) {
+                              return Icon(
+                                i < recipe['rating']
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Colors.yellow[700],
+                                size: 20,
+                              );
+                            }),
+                          ),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(Icons.favorite_border, color: Colors.red),
+                        onPressed: () {},
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }, childCount: filteredRecipes.length),
+          ),
+          SliverToBoxAdapter(child: _createNewRecipeButton()),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -123,96 +212,11 @@ class _RecipesPageState extends State<RecipesPage> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
+            icon: Icon(Icons.shopping_cart),
             label: 'Lista de Compras',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
-      ),
-    );
-  }
-
-  // Campo de pesquisa
-  Widget _searchField() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: searchController,
-        decoration: InputDecoration(
-          labelText: 'Pesquisar receitas...',
-          border: OutlineInputBorder(),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              _searchRecipes(searchController.text);
-            },
-          ),
-        ),
-        onChanged: (query) {
-          _searchRecipes(query);
-        },
-      ),
-    );
-  }
-
-  // Lista de receitas compartilhadas
-  Widget _recipeList() {
-    return Expanded(
-      child: ListView.builder(
-        itemCount: filteredRecipes.length,
-        itemBuilder: (context, index) {
-          final recipe = filteredRecipes[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-            child: ListTile(
-              title: Text(recipe['name']),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Por: ${recipe['user']}'),
-                  Row(
-                    children: List.generate(5, (i) {
-                      return Icon(
-                        i < recipe['rating'] ? Icons.star : Icons.star_border,
-                        color: Colors.yellow[700],
-                        size: 20,
-                      );
-                    }),
-                  ),
-                ],
-              ),
-              trailing: IconButton(
-                icon: Icon(
-                  recipe['saved'] ? Icons.favorite : Icons.favorite_border,
-                  color: Colors.red,
-                ),
-                onPressed: () {
-                  setState(() {
-                    recipe['saved'] = !recipe['saved'];
-                  });
-                },
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // Botão para criar uma nova receita
-  Widget _createNewRecipeButton() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () {
-          _showCreateRecipeDialog(); // Abre o popup de criação de nova receita
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              Colors
-                  .deepOrangeAccent, // Substituí "primary" por "backgroundColor"
-        ),
-        child: const Text('Criar Nova Receita'),
       ),
     );
   }

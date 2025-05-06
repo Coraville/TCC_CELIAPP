@@ -211,7 +211,7 @@ class _MapPageState extends State<MapPage> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
+            icon: Icon(Icons.shopping_cart),
             label: 'Lista de Compras',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
