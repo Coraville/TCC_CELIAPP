@@ -32,7 +32,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       final snapshot =
           await firestore
               .collection('shopping_lists')
-              .where('userId', isEqualTo: user!.uid)
+              .doc(user!.uid)
+              .collection('user_lists')
               .get();
 
       setState(() {
@@ -55,11 +56,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     if (name.isEmpty || user == null) return;
 
     try {
-      final docRef = await firestore.collection('shopping_lists').add({
-        'userId': user!.uid,
-        'name': name,
-        'items': [],
-      });
+      final docRef = await firestore
+          .collection('shopping_lists')
+          .doc(user!.uid)
+          .collection('user_lists')
+          .add({'name': name, 'items': []});
 
       setState(() {
         shoppingLists.add({'id': docRef.id, 'name': name, 'items': []});
@@ -80,9 +81,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     });
 
     try {
-      await firestore.collection('shopping_lists').doc(list['id']).update({
-        'items': list['items'],
-      });
+      await firestore
+          .collection('shopping_lists')
+          .doc(user!.uid)
+          .collection('user_lists')
+          .doc(list['id'])
+          .update({'items': list['items']});
     } catch (e) {
       print("Erro ao adicionar item: $e");
     }
@@ -94,6 +98,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     try {
       await firestore
           .collection('shopping_lists')
+          .doc(user!.uid)
+          .collection('user_lists')
           .doc(shoppingLists[listIndex]['id'])
           .update({'items': shoppingLists[listIndex]['items']});
     } catch (e) {
@@ -107,8 +113,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     try {
       await firestore
           .collection('shopping_lists')
+          .doc(user!.uid)
+          .collection('user_lists')
           .doc(shoppingLists[index]['id'])
           .delete();
+
       setState(() {
         shoppingLists.removeAt(index);
       });

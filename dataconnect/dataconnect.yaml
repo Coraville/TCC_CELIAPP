@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "celiapp-4b834-service"
+location: "southamerica-east1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "celiapp-4b834-database"
+      cloudSql:
+        instanceId: "celiapp-4b834-instance"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]

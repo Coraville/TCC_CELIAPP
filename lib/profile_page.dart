@@ -63,9 +63,9 @@ class _ProfilePageState extends State<ProfilePage> {
         nameController.text = data['name'] ?? '';
         selectedAvatar = data['avatar'] ?? avatarPaths[0];
         birthdayController.text = data['birthday'] ?? '';
-        email = user.email;
-        emailController.text = email ?? '';
         selectedAllergens = List<String>.from(data['allergens'] ?? []);
+        email = data['email'] ?? user.email;
+        emailController.text = email ?? '';
       });
     }
   }
