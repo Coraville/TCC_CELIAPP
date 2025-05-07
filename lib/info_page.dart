@@ -128,6 +128,15 @@ class _InfoPageState extends State<InfoPage> {
             ),
             const Text('Laiz Preda Torres', style: TextStyle(fontSize: 16)),
             const Text('Mayra Olimpia Tavares', style: TextStyle(fontSize: 16)),
+            const Divider(color: Colors.grey, thickness: 1, height: 30),
+            const Text(
+              'Nutricionista consultado:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              'Vitor Correia Rodrigues - CRN: 77480 ',
+              style: TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 12),
 
             TextButton(

@@ -4,11 +4,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Lista de palavras proibidas (exemplo, adicione ou remova conforme necessário)
 const List<String> forbiddenWords = [
-  'palavrão1',
-  'palavrão2',
-  'xingamento1',
-  'xingamento2', // Adicione os termos reais
-  '@',
+  'puta',
+  'viado',
+  'PUTA',
+  'Caralho',
+  'vadia',
+  'cuzao',
+  'arrombado',
+  'viadinho',
+  'merda',
+  'bosta',
+  'porra' // Adicione os termos reais
+      '@',
   '#',
   '%',
   '^',
@@ -29,6 +36,13 @@ const List<String> forbiddenWords = [
 
 bool containsForbiddenWords(String text) {
   text = text.toLowerCase();
+  text = text
+      .replaceAll(RegExp(r'4'), 'a')
+      .replaceAll(RegExp(r'0'), 'o')
+      .replaceAll(RegExp(r'1'), 'i')
+      .replaceAll(RegExp(r'3'), 'e')
+      .replaceAll(RegExp(r'5'), 's')
+      .replaceAll(RegExp(r'7'), 't');
   for (var word in forbiddenWords) {
     if (text.contains(word)) {
       return true;
@@ -111,17 +125,32 @@ class _AddRecipePageState extends State<AddRecipePage> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Colors.deepOrangeAccent;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar Receita')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text(''), backgroundColor: primaryColor),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                'Nova Receita',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              // Nome da receita
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome da Receita'),
+                decoration: InputDecoration(
+                  labelText: 'Nome da Receita',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o nome da receita';
@@ -132,10 +161,18 @@ class _AddRecipePageState extends State<AddRecipePage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+
+              // Descrição
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Descrição'),
+                decoration: InputDecoration(
+                  labelText: 'Descrição',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                maxLines: 3,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira a descrição';
@@ -146,8 +183,14 @@ class _AddRecipePageState extends State<AddRecipePage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              const Text('Escolha uma imagem:'),
+              const SizedBox(height: 20),
+
+              // Seleção de imagem
+              const Text(
+                'Escolha uma imagem:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 height: 100,
                 child: ListView.builder(
@@ -162,38 +205,50 @@ class _AddRecipePageState extends State<AddRecipePage> {
                         });
                       },
                       child: Container(
-                        margin: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
                           border: Border.all(
                             color:
                                 selectedImage == imagePath
-                                    ? Colors.orange
+                                    ? Colors.deepOrangeAccent
                                     : Colors.transparent,
                             width: 3,
                           ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Image.asset(
-                          imagePath,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            imagePath,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 30),
+
+              // Ingredientes
               const Text(
                 'Ingredientes',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 8),
               ..._ingredientControllers.map((controller) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: TextFormField(
                     controller: controller,
-                    decoration: const InputDecoration(labelText: 'Ingrediente'),
+                    decoration: InputDecoration(
+                      labelText: 'Ingrediente',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, insira o ingrediente';
@@ -206,15 +261,37 @@ class _AddRecipePageState extends State<AddRecipePage> {
                   ),
                 );
               }).toList(),
-              TextButton.icon(
-                onPressed: _addIngredientField,
-                icon: const Icon(Icons.add),
-                label: const Text('Adicionar Ingrediente'),
+
+              // Botão para adicionar ingrediente
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _addIngredientField,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Adicionar Ingrediente'),
+                  style: TextButton.styleFrom(foregroundColor: primaryColor),
+                ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _submitRecipe,
-                child: const Text('Salvar Receita'),
+
+              const SizedBox(height: 20),
+
+              // Botão de salvar
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitRecipe,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepOrangeAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'Salvar Receita',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
               ),
             ],
           ),
