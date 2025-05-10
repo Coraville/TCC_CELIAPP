@@ -1,8 +1,10 @@
+// ... imports
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'recipe_detail_page.dart';
 import 'add_recipe_page.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class RecipesPage extends StatefulWidget {
   const RecipesPage({super.key});
@@ -15,7 +17,9 @@ class _RecipesPageState extends State<RecipesPage> {
   int _selectedIndex = 2;
   TextEditingController searchController = TextEditingController();
 
+  List<Map<String, dynamic>> allRecipes = [];
   List<Map<String, dynamic>> filteredRecipes = [];
+  String filterOption = 'Todas';
 
   @override
   void initState() {
@@ -27,19 +31,70 @@ class _RecipesPageState extends State<RecipesPage> {
     final user = FirebaseAuth.instance.currentUser;
     final snapshot =
         await FirebaseFirestore.instance.collection('recipes').get();
+    final favoritesSnapshot =
+        await FirebaseFirestore.instance
+            .collection('favorite_recipes')
+            .where('userId', isEqualTo: user!.uid)
+            .get();
+
+    final favoriteRecipeIds =
+        favoritesSnapshot.docs
+            .map((doc) => doc.data()['recipeId'] as String)
+            .toSet();
+
     setState(() {
-      filteredRecipes =
+      allRecipes =
           snapshot.docs.map((doc) {
             var data = doc.data();
             return {
               'name': data['name'],
               'user': data['authorName'],
-              'rating': data['rating'] ?? 3, // Default to 3 stars if no rating
-              'image':
-                  'assets/BDReceitas/recipe_${doc.id}.png', // Use the image from assets
+              'rating': data['rating'] ?? 3,
+              'image': data['image'],
               'docId': doc.id,
+              'isFavorite': favoriteRecipeIds.contains(doc.id),
+              'authorId': data['authorId'],
             };
           }).toList();
+      _applyFilters();
+    });
+  }
+
+  void _toggleFavorite(String docId, bool isFavorite) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final favRef = FirebaseFirestore.instance
+        .collection('favorite_recipes')
+        .doc('${user.uid}_$docId');
+
+    if (isFavorite) {
+      await favRef.delete();
+    } else {
+      await favRef.set({
+        'userId': user.uid,
+        'recipeId': docId,
+        'favoritedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    _fetchRecipes();
+  }
+
+  void _applyFilters() {
+    final user = FirebaseAuth.instance.currentUser;
+    setState(() {
+      if (filterOption == 'Todas') {
+        filteredRecipes = List.from(allRecipes);
+      } else if (filterOption == 'Receitas feitas por mim') {
+        filteredRecipes =
+            allRecipes
+                .where((recipe) => recipe['authorId'] == user!.uid)
+                .toList();
+      } else if (filterOption == 'Receitas favoritadas') {
+        filteredRecipes =
+            allRecipes.where((recipe) => recipe['isFavorite'] == true).toList();
+      }
     });
   }
 
@@ -67,36 +122,58 @@ class _RecipesPageState extends State<RecipesPage> {
   }
 
   void _searchRecipes(String query) {
+    final filtered =
+        allRecipes
+            .where(
+              (recipe) =>
+                  recipe['name'].toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
     setState(() {
-      if (query.isEmpty) {
-        _fetchRecipes(); // Fetch all recipes if search is cleared
-      } else {
-        filteredRecipes =
-            filteredRecipes
-                .where(
-                  (recipe) => recipe['name'].toLowerCase().contains(
-                    query.toLowerCase(),
-                  ),
-                )
-                .toList();
-      }
+      filteredRecipes = filtered;
     });
   }
 
   Widget _searchField() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: searchController,
-        decoration: InputDecoration(
-          labelText: 'Pesquisar receitas...',
-          border: OutlineInputBorder(),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _searchRecipes(searchController.text),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: searchController,
+              decoration: const InputDecoration(
+                labelText: 'Pesquisar receitas...',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: _searchRecipes,
+            ),
           ),
-        ),
-        onChanged: (query) => _searchRecipes(query),
+          const SizedBox(width: 10),
+          DropdownButton<String>(
+            value: filterOption,
+            icon: const Icon(Icons.filter_list),
+            items:
+                <String>[
+                  'Todas',
+                  'Receitas feitas por mim',
+                  'Receitas favoritadas',
+                ].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  filterOption = newValue;
+                });
+                _applyFilters();
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -147,49 +224,65 @@ class _RecipesPageState extends State<RecipesPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => RecipeDetailPage(recipe: recipe),
+                      builder:
+                          (_) => RecipeDetailPage(
+                            recipe: recipe,
+                            recipeId:
+                                recipe['docId'], // Passando o ID da receita correto
+                          ),
                     ),
                   );
                 },
-                child: Hero(
-                  tag: recipe['name'], // Hero tag for animation
-                  child: Card(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 5,
-                      horizontal: 10,
+                child: Card(
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 5,
+                    horizontal: 10,
+                  ),
+                  child: ListTile(
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        height: MediaQuery.of(context).size.width * 0.2,
+                        child:
+                            recipe['image'] != null
+                                ? Image.network(
+                                  recipe['image'],
+                                  fit: BoxFit.cover,
+                                )
+                                : const Icon(Icons.image, size: 50),
+                      ),
                     ),
-                    child: ListTile(
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          recipe['image'],
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
+                    title: Text(recipe['name']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Por: ${recipe['user']}'),
+                        Row(
+                          children: List.generate(5, (i) {
+                            return Icon(
+                              i < recipe['rating']
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: Colors.yellow[700],
+                              size: 20,
+                            );
+                          }),
                         ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        recipe['isFavorite']
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: Colors.red,
                       ),
-                      title: Text(recipe['name']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Por: ${recipe['user']}'),
-                          Row(
-                            children: List.generate(5, (i) {
-                              return Icon(
-                                i < recipe['rating']
-                                    ? Icons.star
-                                    : Icons.star_border,
-                                color: Colors.yellow[700],
-                                size: 20,
-                              );
-                            }),
+                      onPressed:
+                          () => _toggleFavorite(
+                            recipe['docId'],
+                            recipe['isFavorite'],
                           ),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(Icons.favorite_border, color: Colors.red),
-                        onPressed: () {},
-                      ),
                     ),
                   ),
                 ),

@@ -18,6 +18,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isLoading = false;
   String? errorMessage;
+  bool _obscureText = true; // Controla a visibilidade da senha
 
   Future<void> _login() async {
     setState(() {
@@ -184,8 +185,22 @@ class _LoginPageState extends State<LoginPage> {
         enabledBorder: border,
         focusedBorder: border,
         isDense: true,
+        suffixIcon:
+            isPassword
+                ? IconButton(
+                  icon: Icon(
+                    _obscureText ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureText = !_obscureText;
+                    });
+                  },
+                )
+                : null,
       ),
-      obscureText: isPassword,
+      obscureText: isPassword ? _obscureText : false,
     );
   }
 

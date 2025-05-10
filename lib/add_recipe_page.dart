@@ -1,41 +1,28 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'recipes_page.dart';
 
-// Lista de palavras proibidas (exemplo, adicione ou remova conforme necessário)
+// Lista de palavras proibidas
 const List<String> forbiddenWords = [
-  'puta',
-  'viado',
-  'PUTA',
-  'Caralho',
-  'vadia',
-  'cuzao',
-  'arrombado',
-  'viadinho',
-  'merda',
-  'bosta',
-  'porra' // Adicione os termos reais
-      '@',
-  '#',
-  '%',
-  '^',
-  '&',
+  'puta', 'viado', 'caralho', 'vadia', 'cuzao', 'arrombado',
+  'viadinho', 'merda', 'bosta', 'porra', '@', '#', '%', '^', '&',
   '*',
   '!',
-  '(',
-  ')',
   '=',
   '-',
-  '+',
   '}',
   '{',
   '[',
-  ']',
-  // Adicione outros símbolos que você deseja bloquear
+  ']', // Outros símbolos que você deseja bloquear
 ];
 
 bool containsForbiddenWords(String text) {
   text = text.toLowerCase();
+  text = text.replaceAll(RegExp(r'[^a-z0-9]'), '');
   text = text
       .replaceAll(RegExp(r'4'), 'a')
       .replaceAll(RegExp(r'0'), 'o')
@@ -63,16 +50,144 @@ class _AddRecipePageState extends State<AddRecipePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final List<TextEditingController> _ingredientControllers = [];
+  final TextEditingController _preparationTime = TextEditingController();
+  final TextEditingController _servingsController = TextEditingController();
+  String _selectedTimeUnit = 'Minutos';
+  bool _isSubmitting = false;
 
-  // Variáveis para armazenar a imagem selecionada e as imagens disponíveis
-  String? selectedImage; // A imagem selecionada
-  final List<String> availableImages = [
-    // Lista de imagens disponíveis
-    'assets/BDReceitas/recipe1.jpg',
-    'assets/BDReceitas/recipe2.jpg',
-    'assets/BDReceitas/recipe3.jpg',
-    'assets/BDReceitas/recipe4.jpg',
-  ];
+  File? _imageFile;
+  String? imageUrl;
+
+  Future<void> _pickImage() async {
+    // Verifica se o usuário está autenticado
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Caso não esteja autenticado, redireciona para a tela de login
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, faça login para adicionar uma imagem.'),
+        ),
+      );
+      // Redirecionar para a tela de login (ou apenas exibir a tela de login)
+      return;
+    }
+
+    // Se o usuário estiver autenticado, permite escolher uma imagem
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImageToFirebase(File imageFile) async {
+    try {
+      // Verifica se o usuário está autenticado
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        // Se o usuário não estiver autenticado, exibe uma mensagem e retorna null
+        print('Usuário não autenticado');
+        return null;
+      }
+
+      // Caso o usuário esteja autenticado, faz o upload da imagem
+      final storageRef = FirebaseStorage.instance.ref().child(
+        'recipe_images/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      final uploadTask = storageRef.putFile(imageFile);
+      final taskSnapshot = await uploadTask.whenComplete(() => null);
+      final imageUrl = await taskSnapshot.ref.getDownloadURL();
+      return imageUrl;
+    } catch (e) {
+      print('Erro ao fazer upload da imagem: $e');
+      return null;
+    }
+  }
+
+  Future<void> _submitRecipe() async {
+    if (_formKey.currentState!.validate()) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final validIngredients =
+          _ingredientControllers
+              .map((c) => c.text.trim())
+              .where((i) => i.isNotEmpty)
+              .toList();
+
+      if (validIngredients.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Adicione pelo menos um ingrediente.')),
+        );
+        return;
+      }
+
+      setState(() => _isSubmitting = true);
+
+      try {
+        String? imageUrl;
+        if (_imageFile != null) {
+          imageUrl = await _uploadImageToFirebase(_imageFile!);
+        }
+
+        final recipeId =
+            FirebaseFirestore.instance.collection('recipes').doc().id;
+        final recipeRef = FirebaseFirestore.instance
+            .collection('recipes')
+            .doc(recipeId);
+
+        // Salva a receita principal no Firestore
+        await recipeRef.set({
+          'name': _nameController.text,
+          'description': _descriptionController.text,
+          'authorId': user.uid,
+          'authorName': user.displayName ?? 'Anônimo',
+          'preparationTime': _preparationTime.text,
+          'preparationTimeUnit': _selectedTimeUnit,
+          'servings': int.parse(_servingsController.text),
+          'createdAt': FieldValue.serverTimestamp(),
+          'image': imageUrl,
+          'userId': user.uid,
+        });
+
+        // Salva os ingredientes associados à receita
+        for (var ingredient in validIngredients) {
+          await recipeRef.collection('ingredients').add({
+            'name': ingredient,
+            'authorId': user.uid,
+            'userId': user.uid,
+          });
+        }
+
+        _nameController.clear();
+        _descriptionController.clear();
+        _preparationTime.clear();
+        _servingsController.clear();
+        _ingredientControllers.clear();
+        _imageFile = null;
+        _selectedTimeUnit = 'Minutos';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Receita adicionada com sucesso!')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => RecipesPage()),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao adicionar receita: $e')),
+        );
+      } finally {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
 
   void _addIngredientField() {
     setState(() {
@@ -80,45 +195,14 @@ class _AddRecipePageState extends State<AddRecipePage> {
     });
   }
 
-  Future<void> _submitRecipe() async {
-    if (_formKey.currentState!.validate()) {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        // Trate o caso de usuário não autenticado
-        return;
-      }
-
-      final recipeRef = FirebaseFirestore.instance.collection('recipes').doc();
-      await recipeRef.set({
-        'name': _nameController.text,
-        'description': _descriptionController.text,
-        'authorId': user.uid,
-        'authorName': user.displayName ?? 'Anônimo',
-        'createdAt': FieldValue.serverTimestamp(),
-        'image': selectedImage, // Salvando a imagem selecionada no Firestore
-      });
-
-      for (var controller in _ingredientControllers) {
-        final ingredient = controller.text.trim();
-        if (ingredient.isNotEmpty) {
-          await recipeRef.collection('ingredients').add({
-            'name': ingredient,
-            'authorId': user.uid,
-          });
-        }
-      }
-
-      // Após salvar, você pode navegar de volta ou mostrar uma mensagem de sucesso
-      Navigator.pop(context);
-    }
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    for (var controller in _ingredientControllers) {
-      controller.dispose();
+    _preparationTime.dispose();
+    _servingsController.dispose();
+    for (var c in _ingredientControllers) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -128,7 +212,10 @@ class _AddRecipePageState extends State<AddRecipePage> {
     final primaryColor = Colors.deepOrangeAccent;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(''), backgroundColor: primaryColor),
+      appBar: AppBar(
+        title: const Text('Nova Receita'),
+        backgroundColor: primaryColor,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -136,161 +223,117 @@ class _AddRecipePageState extends State<AddRecipePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Nova Receita',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-
-              // Nome da receita
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nome da Receita',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+                decoration: const InputDecoration(labelText: 'Nome da Receita'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o nome da receita';
-                  }
-                  if (containsForbiddenWords(value)) {
-                    return 'Nome da receita contém palavras proibidas';
-                  }
+                  if (value == null || value.isEmpty) return 'Insira o nome';
+                  if (containsForbiddenWords(value))
+                    return 'Nome com palavras proibidas';
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-
-              // Descrição
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Descrição',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
                 maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Descrição'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a descrição';
-                  }
-                  if (containsForbiddenWords(value)) {
-                    return 'Descrição contém palavras proibidas';
-                  }
+                  if (value == null || value.isEmpty)
+                    return 'Insira a descrição';
+                  if (containsForbiddenWords(value))
+                    return 'Descrição com palavras proibidas';
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-
-              // Seleção de imagem
-              const Text(
-                'Escolha uma imagem:',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 100,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: availableImages.length,
-                  itemBuilder: (context, index) {
-                    final imagePath = availableImages[index];
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedImage = imagePath;
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color:
-                                selectedImage == imagePath
-                                    ? Colors.deepOrangeAccent
-                                    : Colors.transparent,
-                            width: 3,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: _pickImage,
+                child:
+                    _imageFile != null
+                        ? Image.file(
+                          _imageFile!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        )
+                        : Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.add_a_photo),
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            imagePath,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
-              const SizedBox(height: 30),
-
-              // Ingredientes
-              const Text(
-                'Ingredientes',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              ..._ingredientControllers.map((controller) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+              const SizedBox(height: 12),
+              const Text('Ingredientes:'),
+              ..._ingredientControllers.map(
+                (c) => Padding(
+                  padding: const EdgeInsets.only(top: 6),
                   child: TextFormField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: 'Ingrediente',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira o ingrediente';
-                      }
-                      if (containsForbiddenWords(value)) {
-                        return 'Ingrediente contém palavras proibidas';
-                      }
+                    controller: c,
+                    decoration: const InputDecoration(labelText: 'Ingrediente'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty)
+                        return 'Insira um ingrediente';
+                      if (containsForbiddenWords(v))
+                        return 'Ingrediente com palavras proibidas';
                       return null;
                     },
                   ),
-                );
-              }).toList(),
-
-              // Botão para adicionar ingrediente
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _addIngredientField,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Adicionar Ingrediente'),
-                  style: TextButton.styleFrom(foregroundColor: primaryColor),
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // Botão de salvar
+              TextButton.icon(
+                onPressed: _addIngredientField,
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar ingrediente'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _preparationTime,
+                decoration: const InputDecoration(
+                  labelText: 'Tempo de preparo',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Informe o tempo';
+                  if (int.tryParse(v) == null) return 'Apenas números';
+                  return null;
+                },
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedTimeUnit,
+                onChanged: (v) => setState(() => _selectedTimeUnit = v!),
+                items:
+                    ['Minutos', 'Horas', 'Dias']
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _servingsController,
+                decoration: const InputDecoration(labelText: 'Porções'),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Informe as porções';
+                  if (int.tryParse(v) == null) return 'Apenas números';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submitRecipe,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepOrangeAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                   ),
-                  child: const Text(
-                    'Salvar Receita',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  onPressed: _isSubmitting ? null : _submitRecipe,
+                  child:
+                      _isSubmitting
+                          ? const CircularProgressIndicator()
+                          : const Text(
+                            'Adicionar Receita',
+                            style: TextStyle(color: Colors.white),
+                          ),
                 ),
               ),
             ],

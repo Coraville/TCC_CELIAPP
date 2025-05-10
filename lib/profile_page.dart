@@ -377,8 +377,11 @@ class _ProfilePageState extends State<ProfilePage> {
         onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Receitas'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'shopping_cart',

@@ -23,6 +23,8 @@ class _RegistroPageState extends State<RegistroPage> {
     filter: {"#": RegExp(r'[0-9]')},
   );
   String _genero = '';
+  bool _isSenhaVisible = false;
+  bool _isConfirmarSenhaVisible = false;
   String? selectedAvatar = 'assets/avatares/avatar1.png';
 
   final List<String> avatarPaths = [
@@ -30,7 +32,15 @@ class _RegistroPageState extends State<RegistroPage> {
     'assets/avatares/avatar2.png',
     'assets/avatares/avatar3.png',
     'assets/avatares/avatar4.png',
-    // Adicione mais caminhos de avatar conforme necessário
+    'assets/avatares/avatar5.png',
+    'assets/avatares/avatar6.png',
+    'assets/avatares/avatar7.png',
+    'assets/avatares/avatar8.png',
+    'assets/avatares/avatar9.png',
+    'assets/avatares/avatar10.png',
+    'assets/avatares/avatar11.png',
+    'assets/avatares/avatar12.png',
+    'assets/avatares/avatar13.png',
   ];
 
   Future<void> _registrar() async {
@@ -194,7 +204,6 @@ class _RegistroPageState extends State<RegistroPage> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
   }) {
-    // Adiciona o _dateMaskFormatter automaticamente se for um campo de data
     if (hint.toLowerCase() == 'data de nascimento') {
       inputFormatters = [_dateMaskFormatter];
       keyboardType = TextInputType.number;
@@ -202,7 +211,10 @@ class _RegistroPageState extends State<RegistroPage> {
 
     return TextFormField(
       controller: controller,
-      obscureText: isPassword,
+      obscureText:
+          isPassword
+              ? (hint == 'Senha' ? !_isSenhaVisible : !_isConfirmarSenhaVisible)
+              : false,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       style: const TextStyle(fontFamily: 'RobotoFlex'),
@@ -213,6 +225,26 @@ class _RegistroPageState extends State<RegistroPage> {
           vertical: 14,
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+        suffixIcon:
+            isPassword
+                ? GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (hint == 'Senha') {
+                        _isSenhaVisible = !_isSenhaVisible;
+                      } else if (hint == 'Confirmar senha') {
+                        _isConfirmarSenhaVisible = !_isConfirmarSenhaVisible;
+                      }
+                    });
+                  },
+                  child: Icon(
+                    _isSenhaVisible || _isConfirmarSenhaVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    color: Colors.grey,
+                  ),
+                )
+                : null,
       ),
       validator: (value) {
         if (value == null || value.isEmpty) return 'Campo obrigatório';
