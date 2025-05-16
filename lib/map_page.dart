@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:lottie/lottie.dart';
+import 'package:diacritic/diacritic.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+// RouteObserver global
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -12,10 +17,65 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class _MapPageState extends State<MapPage>
+    with WidgetsBindingObserver, RouteAware {
   int _selectedIndex = 1;
-  bool _isScanning = false;
-  String _status = 'idle'; // idle, gluten, sem_gluten
+  bool _isScanning = true; // scanner ativo por padrão
+  String _status = 'idle'; // idle, checking, gluten, sem_gluten
+  late MobileScannerController _cameraController;
+  Map<String, dynamic>? _glutenProductsLocal;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadLocalGlutenData();
+    _cameraController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: CameraFacing.back,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute is PageRoute) {
+      routeObserver.subscribe(this, modalRoute);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
+    _cameraController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Não chama start/stop aqui para evitar erro com textura
+    // Apenas pause a câmera se precisar (se suportar)
+  }
+
+  @override
+  void didPopNext() {
+    // Quando voltar para essa página, reative a escaneamento
+    setState(() {
+      _isScanning = true;
+      _status = 'idle';
+    });
+  }
+
+  Future<void> _loadLocalGlutenData() async {
+    final jsonString = await rootBundle.loadString(
+      'assets/gluten_products.json',
+    );
+    setState(() {
+      _glutenProductsLocal = jsonDecode(jsonString);
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -44,31 +104,96 @@ class _MapPageState extends State<MapPage> {
   Future<void> verificarProduto(String codigo) async {
     setState(() {
       _status = 'checking';
+      _isScanning = false;
     });
 
     final url = 'https://br.openfoodfacts.org/api/v0/product/$codigo.json';
 
+    final List<String> glutenKeywordsLocal = [
+      'gluten',
+      'trigo',
+      'cevada',
+      'centeio',
+      'malte',
+      'farinha',
+      'farelo',
+      'amido de trigo',
+      'pode conter glúten',
+      'contém glúten',
+      'contém gluten',
+      'pode conter trigo',
+      'pode conter cevada',
+      'pode conter centeio',
+      'pode conter malte',
+      'aveia',
+      'trigos',
+      'glúten',
+    ];
+
+    final glutenAbsencePhrases = [
+      'sem gluten',
+      'gluten free',
+      'não contém gluten',
+      'não contém trigo',
+      'isento de gluten',
+      'livre de gluten',
+    ];
+
+    bool isGlutenLocal = false;
+
     try {
-      final response = await http.get(Uri.parse(url));
+      if (_glutenProductsLocal != null &&
+          _glutenProductsLocal!.containsKey(codigo)) {
+        final productInfo = _glutenProductsLocal![codigo];
+        if (productInfo is Map<String, dynamic> &&
+            productInfo['contains_gluten'] == true) {
+          isGlutenLocal = true;
+        }
+      }
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final product = data['product'];
+      if (isGlutenLocal) {
+        setState(() {
+          _status = 'gluten';
+        });
+      } else {
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final product = data['product'];
+          if (product != null) {
+            final allergens = List<String>.from(
+              product['allergens_tags'] ?? [],
+            );
+            final labels = List<String>.from(product['labels_tags'] ?? []);
+            final rawIngredients =
+                (product['ingredients_text'] ?? '').toString();
+            final ingredients = removeDiacritics(rawIngredients.toLowerCase());
+            final normalizedAllergens =
+                allergens.map(removeDiacritics).toList();
+            final normalizedLabels = labels.map(removeDiacritics).toList();
 
-        if (product != null) {
-          final allergens = List<String>.from(product['allergens_tags'] ?? []);
-          final labels = List<String>.from(product['labels_tags'] ?? []);
-          final ingredients =
-              (product['ingredients_text'] ?? '').toString().toLowerCase();
+            final hasGlutenTag =
+                normalizedAllergens.contains('en:gluten') ||
+                normalizedAllergens.contains('pt:gluten') ||
+                normalizedLabels.contains('en:gluten') ||
+                normalizedLabels.contains('pt:gluten');
 
-          final hasGlutenTag =
-              allergens.contains('en:gluten') || labels.contains('en:gluten');
-          final containsWordGluten = ingredients.contains('gluten');
+            final containsGlutenLocal = glutenKeywordsLocal.any(
+              (keyword) => ingredients.contains(keyword),
+            );
+            final containsNoGluten = glutenAbsencePhrases.any(
+              (phrase) => ingredients.contains(phrase),
+            );
 
-          if (hasGlutenTag || containsWordGluten) {
-            setState(() {
-              _status = 'gluten';
-            });
+            if ((hasGlutenTag || containsGlutenLocal) && !containsNoGluten) {
+              setState(() {
+                _status = 'gluten';
+              });
+            } else {
+              setState(() {
+                _status = 'sem_gluten';
+              });
+            }
           } else {
             setState(() {
               _status = 'sem_gluten';
@@ -76,20 +201,17 @@ class _MapPageState extends State<MapPage> {
           }
         } else {
           setState(() {
-            _status = 'sem_gluten'; // Produto não encontrado
+            _status = 'gluten';
           });
         }
-      } else {
-        setState(() {
-          _status = 'sem_gluten'; // Erro de resposta
-        });
       }
     } catch (e) {
       setState(() {
-        _status = 'sem_gluten'; // Erro de conexão ou parsing
+        _status = 'sem_gluten';
       });
     }
 
+    // Voltar ao scanner após 5 segundos
     Timer(const Duration(seconds: 5), () {
       setState(() {
         _status = 'idle';
@@ -148,42 +270,10 @@ class _MapPageState extends State<MapPage> {
         ),
       );
     } else if (_status == 'checking') {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     } else {
-      return Column(
-        children: [
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _isScanning = true;
-              });
-            },
-            child: const Text('Escanear'),
-          ),
-          const SizedBox(height: 30),
-          _isScanning
-              ? SizedBox(
-                width: 300,
-                height: 300,
-                child: MobileScanner(
-                  onDetect: (capture) {
-                    final barcodes = capture.barcodes;
-                    if (barcodes.isNotEmpty) {
-                      final String? code = barcodes.first.rawValue;
-                      if (code != null) {
-                        setState(() => _isScanning = false);
-                        verificarProduto(
-                          code,
-                        ); // Verifica o produto usando a API
-                      }
-                    }
-                  },
-                ),
-              )
-              : const SizedBox.shrink(),
-        ],
-      );
+      // idle → scanner visível
+      return const SizedBox.shrink();
     }
   }
 
@@ -194,9 +284,35 @@ class _MapPageState extends State<MapPage> {
         title: const Text(''),
         backgroundColor: const Color(0xFFFF6E40),
       ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 500),
-        child: _buildResultado(),
+      body: Stack(
+        children: [
+          // Scanner sempre visível, só desabilita quando _isScanning == false
+          Visibility(
+            visible: _isScanning,
+            child: MobileScanner(
+              controller: _cameraController,
+              fit: BoxFit.cover,
+              onDetect: (capture) {
+                final barcodes = capture.barcodes;
+                if (barcodes.isNotEmpty && _isScanning) {
+                  final String? code = barcodes.first.rawValue;
+                  if (code != null) {
+                    setState(() {
+                      _isScanning = false;
+                    });
+                    verificarProduto(code);
+                  }
+                }
+              },
+            ),
+          ),
+          // Resultado aparece sobre o scanner
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            child:
+                _status != 'idle' ? _buildResultado() : const SizedBox.shrink(),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

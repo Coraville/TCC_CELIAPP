@@ -54,6 +54,7 @@ dependencies:
   firebase_data_connect: ^0.1.0
   firebase_storage: ^12.4.5
   firebase_app_check: ^0.3.2+5
+  diacritic: ^0.1.3
 
 
 
@@ -102,6 +103,7 @@ flutter:
     - assets/avatares/avatar12.png
     - assets/avatares/avatar13.png
     - assets/placeholder.png
+    - assets/gluten_products.json
 
 
 
