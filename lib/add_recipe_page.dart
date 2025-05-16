@@ -140,6 +140,14 @@ class _AddRecipePageState extends State<AddRecipePage> {
             .collection('recipes')
             .doc(recipeId);
 
+        // Busca avatar do usuário na coleção 'users'
+        final userDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+        final avatar = userDoc.data()?['avatar'] ?? '';
+
         // Salva a receita principal no Firestore
         await recipeRef.set({
           'name': _nameController.text,
@@ -152,6 +160,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
           'createdAt': FieldValue.serverTimestamp(),
           'image': imageUrl,
           'userId': user.uid,
+          'avatar': avatar,
         });
 
         // Salva os ingredientes associados à receita

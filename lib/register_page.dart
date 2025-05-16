@@ -81,6 +81,7 @@ class _RegistroPageState extends State<RegistroPage> {
                 'aniversario': birthday,
                 'genero': _genero,
                 'avatar': selectedAvatar ?? '',
+                'userID': userCredential.user!.uid,
               });
 
           ScaffoldMessenger.of(context).showSnackBar(

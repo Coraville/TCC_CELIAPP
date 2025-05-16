@@ -27,7 +27,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? email;
 
   List<String> avatarPaths = List.generate(
-    10,
+    13,
     (index) => 'assets/avatares/avatar${index + 1}.png',
   );
 

@@ -256,20 +256,7 @@ class _RecipesPageState extends State<RecipesPage> {
                     title: Text(recipe['name']),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Por: ${recipe['user']}'),
-                        Row(
-                          children: List.generate(5, (i) {
-                            return Icon(
-                              i < recipe['rating']
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: Colors.yellow[700],
-                              size: 20,
-                            );
-                          }),
-                        ),
-                      ],
+                      children: [Text('Por: ${recipe['user']}')],
                     ),
                     trailing: IconButton(
                       icon: Icon(

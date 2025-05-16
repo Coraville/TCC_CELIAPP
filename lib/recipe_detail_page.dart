@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 class RecipeDetailPage extends StatefulWidget {
   final String recipeId;
+  final Map<String, dynamic> recipe;
 
   const RecipeDetailPage({
     required this.recipeId,
+    required this.recipe,
     Key? key,
-    required Map<String, dynamic> recipe,
   }) : super(key: key);
 
   @override
@@ -20,11 +20,10 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   final TextEditingController _commentController = TextEditingController();
   final user = FirebaseAuth.instance.currentUser;
 
-  int _selectedIndex = 2; // 'Receitas' como index inicial
+  int _selectedIndex = 2;
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
-
     switch (index) {
       case 0:
         Navigator.pushNamed(context, '/profile');
@@ -70,7 +69,13 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(recipe['name'] ?? 'Detalhes da Receita'),
+            title: Text(
+              recipe['name'] ?? 'Detalhes da Receita',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             backgroundColor: Colors.deepOrangeAccent,
           ),
           body: Column(
@@ -112,16 +117,79 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${recipe['time'] ?? '60 mins'} • ${recipe['servings'] ?? '1 porção'}',
+                        recipe['preparationTime'] != null
+                            ? '${recipe['preparationTime']} ${recipe['preparationTimeUnit'] ?? ''} • ${recipe['servings'] ?? '1'} porções'
+                            : 'Sem tempo de preparo • ${recipe['servings'] ?? '1'} porções',
                         style: TextStyle(color: Colors.grey[600]),
                       ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (recipe['avatar'] != null &&
+                              recipe['avatar'].toString().isNotEmpty)
+                            CircleAvatar(
+                              backgroundImage: AssetImage(recipe['avatar']),
+                              radius: 16,
+                            )
+                          else
+                            const CircleAvatar(
+                              radius: 16,
+                              child: Icon(Icons.person, size: 16),
+                            ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              recipe['authorName'] ?? 'Autor desconhecido',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.favorite,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 4),
+                              FutureBuilder<int>(
+                                future: _getLikesCount(widget.recipeId),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Text('...');
+                                  }
+                                  if (snapshot.hasError) {
+                                    return const Text('Erro');
+                                  }
+                                  final count = snapshot.data ?? 0;
+                                  return Text('$count likes');
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
+                      Divider(color: Colors.grey[300]),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Descrição',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       if (recipe['description'] != null)
                         Text(
                           recipe['description'],
                           style: const TextStyle(fontSize: 16),
                         ),
                       const SizedBox(height: 24),
+                      Divider(color: Colors.grey[300]),
                       const Text(
                         'Ingredientes',
                         style: TextStyle(
@@ -142,7 +210,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                           if (!snapshot.hasData || snapshot.data!.isEmpty) {
                             return const Text('Nenhum ingrediente encontrado.');
                           }
-
                           return Column(
                             children:
                                 snapshot.data!.map((ingredient) {
@@ -173,7 +240,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                         stream:
                             FirebaseFirestore.instance
                                 .collection('recipes')
-                                .doc(recipe['id'])
+                                .doc(widget.recipeId)
                                 .collection('comments')
                                 .orderBy('timestamp', descending: true)
                                 .snapshots(),
@@ -197,9 +264,22 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                                   comments[index].data()
                                       as Map<String, dynamic>;
                               return ListTile(
-                                leading: const Icon(
-                                  Icons.comment,
-                                  color: Colors.deepOrangeAccent,
+                                leading: CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage:
+                                      (comment['avatar'] != null &&
+                                              comment['avatar']
+                                                  .toString()
+                                                  .isNotEmpty)
+                                          ? AssetImage(comment['avatar'])
+                                          : null,
+                                  child:
+                                      (comment['avatar'] == null ||
+                                              comment['avatar']
+                                                  .toString()
+                                                  .isEmpty)
+                                          ? const Icon(Icons.person, size: 16)
+                                          : null,
                                 ),
                                 title: Text(comment['text']),
                                 subtitle: Text(
@@ -232,7 +312,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                               Icons.send,
                               color: Colors.deepOrangeAccent,
                             ),
-                            onPressed: () => _addComment(recipe['id']),
+                            onPressed: () => _addComment(widget.recipeId),
                           ),
                         ],
                       ),
@@ -275,6 +355,15 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     );
   }
 
+  Future<int> _getLikesCount(String recipeId) async {
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('favorite_recipes')
+            .where('recipeId', isEqualTo: recipeId)
+            .get();
+    return snapshot.docs.length;
+  }
+
   Future<List<Map<String, dynamic>>> _getIngredients(String recipeId) async {
     final snapshot =
         await FirebaseFirestore.instance
@@ -282,7 +371,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
             .doc(recipeId)
             .collection('ingredients')
             .get();
-
     return snapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();
@@ -292,7 +380,18 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     final text = _commentController.text.trim();
     if (text.isEmpty || user == null) return;
 
-    final name = user!.displayName ?? user!.email ?? 'Anônimo';
+    final userDoc =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
+
+    final name =
+        userDoc.data()?['nome'] ??
+        user!.displayName ??
+        user!.email ??
+        'Anônimo';
+    final avatar = userDoc.data()?['avatar'];
 
     await FirebaseFirestore.instance
         .collection('recipes')
@@ -301,9 +400,13 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         .add({
           'text': text,
           'author': name,
+          'avatar': avatar,
           'timestamp': FieldValue.serverTimestamp(),
         });
 
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Comentário adicionado!')));
     _commentController.clear();
   }
 }
