@@ -19,6 +19,7 @@ class RecipeDetailPage extends StatefulWidget {
 class _RecipeDetailPageState extends State<RecipeDetailPage> {
   final TextEditingController _commentController = TextEditingController();
   final user = FirebaseAuth.instance.currentUser;
+  final TextEditingController _replyController = TextEditingController();
 
   int _selectedIndex = 2;
 
@@ -41,6 +42,39 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         Navigator.pushNamed(context, '/info');
         break;
     }
+  }
+
+  void _showReplyDialog(String commentId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Responder comentário'),
+          content: TextField(
+            controller: _replyController,
+            decoration: const InputDecoration(
+              hintText: 'Escreva sua resposta...',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _replyController.clear();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _addReply(commentId);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Responder'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -263,32 +297,170 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                               final comment =
                                   comments[index].data()
                                       as Map<String, dynamic>;
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  radius: 16,
-                                  backgroundImage:
-                                      (comment['avatar'] != null &&
-                                              comment['avatar']
-                                                  .toString()
-                                                  .isNotEmpty)
-                                          ? AssetImage(comment['avatar'])
-                                          : null,
-                                  child:
-                                      (comment['avatar'] == null ||
-                                              comment['avatar']
-                                                  .toString()
-                                                  .isEmpty)
-                                          ? const Icon(Icons.person, size: 16)
-                                          : null,
-                                ),
-                                title: Text(comment['text']),
-                                subtitle: Text(
-                                  comment['author'] ?? 'Anônimo',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
+                              final commentId =
+                                  comments[index].id; // pega o id do comentário
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ListTile(
+                                    leading: CircleAvatar(
+                                      radius: 16,
+                                      backgroundImage:
+                                          (comment['avatar'] != null &&
+                                                  comment['avatar']
+                                                      .toString()
+                                                      .isNotEmpty)
+                                              ? AssetImage(comment['avatar'])
+                                              : null,
+                                      child:
+                                          (comment['avatar'] == null ||
+                                                  comment['avatar']
+                                                      .toString()
+                                                      .isEmpty)
+                                              ? const Icon(
+                                                Icons.person,
+                                                size: 16,
+                                              )
+                                              : null,
+                                    ),
+                                    title: Text(comment['text']),
+                                    subtitle: Text(
+                                      comment['author'] ?? 'Anônimo',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    trailing:
+                                        comment['authorId'] == user?.uid
+                                            ? Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.edit,
+                                                    size: 18,
+                                                    color: Colors.blue,
+                                                  ),
+                                                  onPressed:
+                                                      () => _editComment(
+                                                        widget.recipeId,
+                                                        commentId,
+                                                        comment['text'],
+                                                      ),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.red,
+                                                  ),
+                                                  onPressed:
+                                                      () => _deleteComment(
+                                                        widget.recipeId,
+                                                        commentId,
+                                                      ),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.reply,
+                                                    size: 18,
+                                                  ),
+                                                  onPressed: () {
+                                                    _showReplyDialog(commentId);
+                                                  },
+                                                ),
+                                              ],
+                                            )
+                                            : IconButton(
+                                              icon: const Icon(
+                                                Icons.reply,
+                                                size: 18,
+                                              ),
+                                              onPressed: () {
+                                                _showReplyDialog(commentId);
+                                              },
+                                            ),
                                   ),
-                                ),
+
+                                  // Aqui mostramos as replies desse comentário (se houver)
+                                  StreamBuilder<QuerySnapshot>(
+                                    stream:
+                                        FirebaseFirestore.instance
+                                            .collection('recipes')
+                                            .doc(widget.recipeId)
+                                            .collection('comments')
+                                            .doc(commentId)
+                                            .collection('replies')
+                                            .orderBy(
+                                              'timestamp',
+                                              descending: false,
+                                            )
+                                            .snapshots(),
+                                    builder: (context, replySnapshot) {
+                                      if (!replySnapshot.hasData ||
+                                          replySnapshot.data!.docs.isEmpty) {
+                                        return const SizedBox(); // nada se não tiver replies
+                                      }
+
+                                      final replies = replySnapshot.data!.docs;
+
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 40.0,
+                                          bottom: 8,
+                                        ),
+                                        child: Column(
+                                          children:
+                                              replies.map((replyDoc) {
+                                                final reply =
+                                                    replyDoc.data()!
+                                                        as Map<String, dynamic>;
+                                                return ListTile(
+                                                  dense: true,
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                  leading: CircleAvatar(
+                                                    radius: 12,
+                                                    backgroundImage:
+                                                        (reply['avatar'] !=
+                                                                    null &&
+                                                                reply['avatar']
+                                                                    .toString()
+                                                                    .isNotEmpty)
+                                                            ? AssetImage(
+                                                              reply['avatar'],
+                                                            )
+                                                            : null,
+                                                    child:
+                                                        (reply['avatar'] ==
+                                                                    null ||
+                                                                reply['avatar']
+                                                                    .toString()
+                                                                    .isEmpty)
+                                                            ? const Icon(
+                                                              Icons.person,
+                                                              size: 12,
+                                                            )
+                                                            : null,
+                                                  ),
+                                                  title: Text(reply['text']),
+                                                  subtitle: Text(
+                                                    reply['author'] ??
+                                                        'Anônimo',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               );
                             },
                           );
@@ -337,7 +509,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                 label: 'Scanner',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.book),
+                icon: Icon(Icons.restaurant_menu),
                 label: 'Receitas',
               ),
               BottomNavigationBarItem(
@@ -401,6 +573,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
           'text': text,
           'author': name,
           'avatar': avatar,
+          'authorId': user!.uid, // <-- adiciona o uid aqui
           'timestamp': FieldValue.serverTimestamp(),
         });
 
@@ -408,5 +581,113 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
       context,
     ).showSnackBar(const SnackBar(content: Text('Comentário adicionado!')));
     _commentController.clear();
+  }
+
+  void _deleteComment(String recipeId, String commentId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('recipes')
+          .doc(recipeId)
+          .collection('comments')
+          .doc(commentId)
+          .delete();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Comentário excluído!')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao excluir comentário: $e')));
+    }
+  }
+
+  void _addReply(String commentId) async {
+    final text = _replyController.text.trim();
+    if (text.isEmpty || user == null) return;
+
+    final userDoc =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
+
+    final name =
+        userDoc.data()?['nome'] ??
+        user!.displayName ??
+        user!.email ??
+        'Anônimo';
+    final avatar = userDoc.data()?['avatar'];
+
+    await FirebaseFirestore.instance
+        .collection('recipes')
+        .doc(widget.recipeId)
+        .collection('comments')
+        .doc(commentId)
+        .collection('replies')
+        .add({
+          'text': text,
+          'author': name,
+          'avatar': avatar,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Resposta adicionada!')));
+    _replyController.clear();
+  }
+
+  void _editComment(String recipeId, String commentId, String currentText) {
+    final TextEditingController editController = TextEditingController(
+      text: currentText,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar Comentário'),
+          content: TextField(
+            controller: editController,
+            maxLines: null,
+            decoration: const InputDecoration(hintText: 'Novo comentário'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newText = editController.text.trim();
+                if (newText.isNotEmpty) {
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('recipes')
+                        .doc(recipeId)
+                        .collection('comments')
+                        .doc(commentId)
+                        .update({'text': newText});
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Comentário atualizado!')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao atualizar comentário: $e'),
+                      ),
+                    );
+                  }
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

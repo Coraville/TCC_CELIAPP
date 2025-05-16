@@ -372,21 +372,24 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFFFF6E40),
-        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
+        selectedItemColor: Colors.deepOrangeAccent,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
           BottomNavigationBarItem(
             icon: Icon(Icons.qr_code_scanner),
-            label: 'Mapa',
+            label: 'Scanner',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant_menu),
+            label: 'Receitas',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
-            label: 'shopping_cart',
+            label: 'Lista de Compras',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Info'),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Informações'),
         ],
       ),
     );

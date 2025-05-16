@@ -209,7 +209,10 @@ class _MapPageState extends State<MapPage> {
             icon: Icon(Icons.qr_code_scanner),
             label: 'Scanner',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Receitas'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant_menu),
+            label: 'Receitas',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'Lista de Compras',
