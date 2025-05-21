@@ -1,6 +1,8 @@
+// shopping_list_page.dart
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'list_detail.dart';
 
 class ShoppingListPage extends StatefulWidget {
   const ShoppingListPage({super.key});
@@ -12,10 +14,8 @@ class ShoppingListPage extends StatefulWidget {
 class _ShoppingListPageState extends State<ShoppingListPage> {
   final user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
   List<Map<String, dynamic>> shoppingLists = [];
   TextEditingController listNameController = TextEditingController();
-  TextEditingController itemController = TextEditingController();
 
   int _selectedIndex = 3;
 
@@ -25,9 +25,32 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     _loadShoppingLists();
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, '/profile');
+        break;
+      case 1:
+        Navigator.pushNamed(context, '/map');
+        break;
+      case 2:
+        Navigator.pushNamed(context, '/recipes');
+        break;
+      case 3:
+        Navigator.pushNamed(context, '/shopping_list');
+        break;
+      case 4:
+        Navigator.pushNamed(context, '/info');
+        break;
+    }
+  }
+
   void _loadShoppingLists() async {
     if (user == null) return;
-
     try {
       final snapshot =
           await firestore
@@ -54,7 +77,6 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
   Future<void> _createNewList(String name) async {
     if (name.isEmpty || user == null) return;
-
     try {
       final docRef = await firestore
           .collection('shopping_lists')
@@ -70,91 +92,35 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     }
   }
 
-  Future<void> _addItemToList(int index, String itemName) async {
-    if (itemName.isEmpty || user == null) return;
-
-    final list = shoppingLists[index];
-    final newItem = {'name': itemName, 'checked': false};
-
-    setState(() {
-      list['items'].add(newItem);
-    });
-
+  Future<void> _renameList(int index, String newName) async {
+    if (newName.isEmpty || user == null) return;
+    final id = shoppingLists[index]['id'];
     try {
       await firestore
           .collection('shopping_lists')
           .doc(user!.uid)
           .collection('user_lists')
-          .doc(list['id'])
-          .update({'items': list['items']});
+          .doc(id)
+          .update({'name': newName});
+      setState(() => shoppingLists[index]['name'] = newName);
     } catch (e) {
-      print("Erro ao adicionar item: $e");
+      print("Erro ao renomear lista: $e");
     }
-  }
-
-  Future<void> _toggleItem(int listIndex, int itemIndex, bool value) async {
-    shoppingLists[listIndex]['items'][itemIndex]['checked'] = value;
-
-    try {
-      await firestore
-          .collection('shopping_lists')
-          .doc(user!.uid)
-          .collection('user_lists')
-          .doc(shoppingLists[listIndex]['id'])
-          .update({'items': shoppingLists[listIndex]['items']});
-    } catch (e) {
-      print("Erro ao atualizar item: $e");
-    }
-
-    setState(() {});
   }
 
   Future<void> _deleteList(int index) async {
+    final id = shoppingLists[index]['id'];
     try {
       await firestore
           .collection('shopping_lists')
           .doc(user!.uid)
           .collection('user_lists')
-          .doc(shoppingLists[index]['id'])
+          .doc(id)
           .delete();
-
-      setState(() {
-        shoppingLists.removeAt(index);
-      });
+      setState(() => shoppingLists.removeAt(index));
     } catch (e) {
       print("Erro ao deletar lista: $e");
     }
-  }
-
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-    switch (index) {
-      case 0:
-        Navigator.pushNamed(context, '/profile');
-        break;
-      case 1:
-        Navigator.pushNamed(context, '/map');
-        break;
-      case 2:
-        Navigator.pushNamed(context, '/recipes');
-        break;
-      case 3:
-        Navigator.pushNamed(context, '/shopping_list');
-        break;
-      case 4:
-        Navigator.pushNamed(context, '/info');
-        break;
-    }
-  }
-
-  Widget _createNewListButton() {
-    return TextButton(
-      onPressed: () => _showNewListDialog(),
-      child: const Text(
-        'Criar Nova Lista',
-        style: TextStyle(color: Colors.deepOrangeAccent),
-      ),
-    );
   }
 
   void _showNewListDialog() {
@@ -186,27 +152,26 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 
-  void _showAddItemDialog(int index) {
+  void _showRenameDialog(int index) {
+    final controller = TextEditingController(
+      text: shoppingLists[index]['name'],
+    );
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Adicionar Item'),
-          content: TextField(controller: itemController),
+          title: const Text('Renomear Lista'),
+          content: TextField(controller: controller),
           actions: [
             TextButton(
               onPressed: () {
-                _addItemToList(index, itemController.text);
-                itemController.clear();
+                _renameList(index, controller.text);
                 Navigator.pop(context);
               },
-              child: const Text('Adicionar'),
+              child: const Text('Salvar'),
             ),
             TextButton(
-              onPressed: () {
-                itemController.clear();
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar'),
             ),
           ],
@@ -215,40 +180,47 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     );
   }
 
-  Widget _shoppingLists() {
-    return Expanded(
-      child: ListView.builder(
-        itemCount: shoppingLists.length,
-        itemBuilder: (context, index) {
-          final list = shoppingLists[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-            child: ListTile(
-              title: Text(list['name']),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (int i = 0; i < list['items'].length; i++)
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: list['items'][i]['checked'],
-                          onChanged: (value) {
-                            _toggleItem(index, i, value!);
-                          },
-                        ),
-                        Text(list['items'][i]['name']),
-                      ],
-                    ),
-                ],
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _deleteList(index),
-              ),
-              onTap: () => _showAddItemDialog(index),
+  Widget _buildListCard(int index) {
+    final list = shoppingLists[index];
+    final items = list['items'] as List<dynamic>;
+    final total = items.length;
+    final checked = items.where((item) => item['checked'] == true).length;
+    final percent = total == 0 ? 0 : (checked / total * 100).round();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        title: Text(
+          list['name'],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text('Concluído: $percent%'),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'renomear') {
+              _showRenameDialog(index);
+            } else if (value == 'excluir') {
+              _deleteList(index);
+            }
+          },
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(value: 'renomear', child: Text('Renomear')),
+                const PopupMenuItem(value: 'excluir', child: Text('Excluir')),
+              ],
+        ),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => ListDetailPage(
+                    listId: list['id'],
+                    listName: list['name'],
+                  ),
             ),
           );
+          _loadShoppingLists(); // Recarrega as listas e porcentagens ao voltar
         },
       ),
     );
@@ -257,16 +229,26 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: const Color(0xFFFF6E40),
-      ),
+      appBar: AppBar(backgroundColor: const Color(0xFFFF6E40)),
       body: Column(
         children: [
           const SizedBox(height: 20),
-          _createNewListButton(),
+          ElevatedButton(
+            onPressed: _showNewListDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepOrange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('Criar Nova Lista'),
+          ),
           const SizedBox(height: 20),
-          _shoppingLists(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: shoppingLists.length,
+              itemBuilder: (context, index) => _buildListCard(index),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

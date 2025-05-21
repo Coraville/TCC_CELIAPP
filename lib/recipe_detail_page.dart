@@ -122,13 +122,35 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                     children: [
                       recipe['image'] != null &&
                               recipe['image'].toString().isNotEmpty
-                          ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              recipe['image'],
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
+                          ? GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder:
+                                    (_) => Dialog(
+                                      backgroundColor: Colors.black,
+                                      insetPadding: EdgeInsets.zero,
+                                      child: GestureDetector(
+                                        onTap:
+                                            () => Navigator.of(context).pop(),
+                                        child: InteractiveViewer(
+                                          child: Image.network(
+                                            recipe['image'],
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                recipe['image'],
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           )
                           : Container(
@@ -274,9 +296,48 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                       const SizedBox(height: 8),
                       if (recipe['preparationSteps'] != null &&
                           recipe['preparationSteps'].toString().isNotEmpty)
-                        Text(
-                          recipe['preparationSteps'],
-                          style: const TextStyle(fontSize: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children:
+                              (recipe['preparationSteps'] as List<dynamic>)
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                    final index = entry.key + 1;
+                                    final step = entry.value;
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 14,
+                                            backgroundColor: Colors.white,
+                                            child: Text(
+                                              '$index',
+                                              style: const TextStyle(
+                                                color: Colors.deepOrange,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              step,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  })
+                                  .toList(),
                         )
                       else
                         const Text(
