@@ -133,18 +133,18 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           actions: [
             TextButton(
               onPressed: () {
+                listNameController.clear();
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
                 _createNewList(listNameController.text);
                 listNameController.clear();
                 Navigator.pop(context);
               },
               child: const Text('Criar'),
-            ),
-            TextButton(
-              onPressed: () {
-                listNameController.clear();
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
             ),
           ],
         );
@@ -164,15 +164,15 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           content: TextField(controller: controller),
           actions: [
             TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
               onPressed: () {
                 _renameList(index, controller.text);
                 Navigator.pop(context);
               },
               child: const Text('Salvar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
             ),
           ],
         );

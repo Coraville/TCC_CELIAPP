@@ -236,27 +236,47 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildOtherAllergenInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: otherAllergenController,
-            decoration: const InputDecoration(labelText: 'Outro alérgeno'),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () {
-            final other = otherAllergenController.text.trim();
-            if (other.isNotEmpty && !selectedAllergens.contains(other)) {
-              setState(() {
-                selectedAllergens.add(other);
-                otherAllergenController.clear();
-              });
-            }
-          },
-        ),
-      ],
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: otherAllergenController,
+              decoration: const InputDecoration(
+                labelText: 'Acrescente outro alérgeno:',
+                border: InputBorder.none,
+                labelStyle: TextStyle(color: Colors.deepOrange),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.deepOrangeAccent),
+            onPressed: () {
+              final other = otherAllergenController.text.trim();
+              if (other.isNotEmpty && !selectedAllergens.contains(other)) {
+                setState(() {
+                  selectedAllergens.add(other);
+                  otherAllergenController.clear();
+                });
+                _saveProfile(); // Salva no Firestore logo após adicionar
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -337,23 +357,38 @@ class _ProfilePageState extends State<ProfilePage> {
               'Alérgenos:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 4.0,
+            const SizedBox(height: 10),
+            Column(
               children:
-                  selectedAllergens
-                      .map(
-                        (a) => Chip(
-                          label: Text(a),
-                          onDeleted: () {
-                            setState(() {
-                              selectedAllergens.remove(a);
-                            });
-                          },
-                        ),
-                      )
-                      .toList(),
+                  selectedAllergens.map((a) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              a,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.redAccent,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                selectedAllergens.remove(a);
+                              });
+                              _saveProfile(); // Salva após remover também
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
+            const SizedBox(height: 10),
             _buildOtherAllergenInput(),
             const SizedBox(height: 20),
             ElevatedButton(

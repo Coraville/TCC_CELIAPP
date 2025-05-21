@@ -29,6 +29,42 @@ class _ListDetailPageState extends State<ListDetailPage> {
     _loadItems();
   }
 
+  void _showDeleteDialog(int index) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Excluir item'),
+            content: const Text('Tem certeza que deseja excluir este item?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  _deleteItem(index);
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'Excluir',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _deleteItem(int index) async {
+    setState(() {
+      items.removeAt(index);
+    });
+    await _saveItems();
+  }
+
   Future<void> _loadItems() async {
     final doc =
         await firestore
@@ -76,16 +112,16 @@ class _ListDetailPageState extends State<ListDetailPage> {
             content: TextField(controller: itemController),
             actions: [
               TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
                 onPressed: () {
                   _addItem(itemController.text.trim());
                   itemController.clear();
                   Navigator.pop(context);
                 },
                 child: const Text('Adicionar'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
               ),
             ],
           ),
@@ -104,17 +140,20 @@ class _ListDetailPageState extends State<ListDetailPage> {
         itemCount: items.length,
         itemBuilder: (_, index) {
           final item = items[index];
-          return CheckboxListTile(
-            title: Text(item['name']),
-            value: item['checked'],
-            onChanged: (value) => _toggleItem(index, value!),
+          return GestureDetector(
+            onLongPress: () => _showDeleteDialog(index),
+            child: CheckboxListTile(
+              title: Text(item['name']),
+              value: item['checked'],
+              onChanged: (value) => _toggleItem(index, value!),
+            ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddItemDialog,
         backgroundColor: Colors.deepOrangeAccent,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 3,
