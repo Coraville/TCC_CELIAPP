@@ -17,7 +17,12 @@ const List<String> forbiddenWords = [
   '}',
   '{',
   '[',
-  ']', // Outros símbolos que você deseja bloquear
+  ']',
+  's3xo',
+  'semen',
+  's3x0',
+  's3x0m3n',
+  'p0t4ria', // Outros símbolos que você deseja bloquear
 ];
 
 bool containsForbiddenWords(String text) {

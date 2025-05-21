@@ -86,7 +86,7 @@ class _RecipesPageState extends State<RecipesPage> {
     setState(() {
       if (filterOption == 'Todas') {
         filteredRecipes = List.from(allRecipes);
-      } else if (filterOption == 'Receitas feitas por mim') {
+      } else if (filterOption == 'Minhas receitas') {
         filteredRecipes =
             allRecipes
                 .where((recipe) => recipe['authorId'] == user!.uid)
@@ -122,15 +122,32 @@ class _RecipesPageState extends State<RecipesPage> {
   }
 
   void _searchRecipes(String query) {
-    final filtered =
-        allRecipes
-            .where(
-              (recipe) =>
-                  recipe['name'].toLowerCase().contains(query.toLowerCase()),
-            )
-            .toList();
+    final user = FirebaseAuth.instance.currentUser;
+
+    List<Map<String, dynamic>> baseList;
+
+    if (filterOption == 'Todas') {
+      baseList = List.from(allRecipes);
+    } else if (filterOption == 'Minhas receitas') {
+      baseList =
+          allRecipes
+              .where((recipe) => recipe['authorId'] == user!.uid)
+              .toList();
+    } else if (filterOption == 'Receitas favoritadas') {
+      baseList =
+          allRecipes.where((recipe) => recipe['isFavorite'] == true).toList();
+    } else {
+      baseList = List.from(allRecipes);
+    }
+
     setState(() {
-      filteredRecipes = filtered;
+      filteredRecipes =
+          baseList
+              .where(
+                (recipe) =>
+                    recipe['name'].toLowerCase().contains(query.toLowerCase()),
+              )
+              .toList();
     });
   }
 
@@ -140,6 +157,7 @@ class _RecipesPageState extends State<RecipesPage> {
       child: Row(
         children: [
           Expanded(
+            flex: 3,
             child: TextField(
               controller: searchController,
               decoration: const InputDecoration(
@@ -150,28 +168,45 @@ class _RecipesPageState extends State<RecipesPage> {
             ),
           ),
           const SizedBox(width: 10),
-          DropdownButton<String>(
-            value: filterOption,
-            icon: const Icon(Icons.filter_list),
-            items:
-                <String>[
-                  'Todas',
-                  'Receitas feitas por mim',
-                  'Receitas favoritadas',
-                ].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  filterOption = newValue;
-                });
-                _applyFilters();
-              }
-            },
+          Expanded(
+            flex: 2,
+            child: DropdownButtonFormField<String>(
+              isExpanded: true, // <- ESSENCIAL para evitar overflow
+              value: filterOption,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+              ),
+              icon: const Icon(Icons.filter_list),
+              items:
+                  <String>[
+                    'Todas',
+                    'Minhas receitas',
+                    'Receitas favoritadas',
+                  ].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(
+                        value,
+                        overflow:
+                            TextOverflow.ellipsis, // evita texto muito longo
+                      ),
+                    );
+                  }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    filterOption = newValue;
+                    searchController
+                        .clear(); // limpa a busca ao trocar o filtro
+                  });
+                  _applyFilters();
+                }
+              },
+            ),
           ),
         ],
       ),
