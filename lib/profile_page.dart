@@ -56,9 +56,11 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = auth.currentUser;
     if (user == null) return;
 
-    final doc = await firestore.collection('users').doc(user.uid).get();
-    if (doc.exists) {
-      final data = doc.data()!;
+    try {
+      final doc = await firestore.collection('users').doc(user.uid).get();
+
+      final data = doc.data() ?? {}; // se não existir, cria mapa vazio
+
       setState(() {
         nameController.text = data['name'] ?? '';
         selectedAvatar = data['avatar'] ?? avatarPaths[0];
@@ -67,6 +69,11 @@ class _ProfilePageState extends State<ProfilePage> {
         email = data['email'] ?? user.email;
         emailController.text = email ?? '';
       });
+    } catch (e) {
+      debugPrint('Erro ao carregar perfil: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Erro ao carregar perfil.')));
     }
   }
 

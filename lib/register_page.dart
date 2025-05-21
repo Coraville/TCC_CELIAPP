@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'loading_screen.dart';
+import 'recipes_page.dart';
 
 class RegistroPage extends StatefulWidget {
   @override
@@ -68,32 +70,37 @@ class _RegistroPageState extends State<RegistroPage> {
           return;
         }
 
-        try {
-          final UserCredential userCredential = await FirebaseAuth.instance
-              .createUserWithEmailAndPassword(email: email, password: senha);
+        // Mostra a tela de loading enquanto registra
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => LoadingScreen()),
+        );
 
-          await FirebaseFirestore.instance
-              .collection('usuarios')
-              .doc(userCredential.user!.uid)
-              .set({
-                'nome': nome,
-                'email': email,
-                'aniversario': birthday,
-                'genero': _genero,
-                'avatar': selectedAvatar ?? '',
-                'userID': userCredential.user!.uid,
-              });
+        final UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(email: email, password: senha);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Usuário registrado com sucesso!')),
-          );
+        final userId = userCredential.user!.uid;
 
-          Navigator.pop(context);
-        } on FirebaseAuthException catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao registrar: ${e.message}')),
-          );
-        }
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'name': nome,
+          'email': email,
+          'birthday': birthday,
+          'genero': _genero,
+          'avatar': selectedAvatar ?? '',
+          'userID': userId,
+        });
+
+        // Após registrar, redireciona para a recipes_page
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => RecipesPage()),
+          (Route<dynamic> route) => false,
+        );
+      } on FirebaseAuthException catch (e) {
+        Navigator.pop(context); // fecha a tela de loading se der erro
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao registrar: ${e.message}')),
+        );
       } on FormatException catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro na data de nascimento: ${e.message}')),
