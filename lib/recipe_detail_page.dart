@@ -747,9 +747,63 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         .toList();
   }
 
+  final List<String> _prohibitedWords = [
+    'puta',
+    'viado',
+    'caralho',
+    'vadia',
+    'cuzao',
+    'arrombado',
+    'viadinho',
+    'merda',
+    'bosta',
+    'porra',
+    '@',
+    '#',
+    '%',
+    '^',
+    '&',
+    '*',
+    '!',
+    '=',
+    '-',
+    '}',
+    '{',
+    '[',
+    ']',
+    's3xo',
+    'semen',
+    's3x0',
+    's3x0m3n',
+    'p0t4ria',
+  ];
+
+  bool _containsOffensiveLanguage(String text) {
+    text = text.toLowerCase();
+    text = text.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    text = text
+        .replaceAll(RegExp(r'4'), 'a')
+        .replaceAll(RegExp(r'0'), 'o')
+        .replaceAll(RegExp(r'1'), 'i')
+        .replaceAll(RegExp(r'3'), 'e')
+        .replaceAll(RegExp(r'5'), 's')
+        .replaceAll(RegExp(r'7'), 't');
+
+    return _prohibitedWords.any((word) => text.contains(word));
+  }
+
   void _addComment(String recipeId) async {
     final text = _commentController.text.trim();
     if (text.isEmpty || user == null) return;
+
+    if (_containsOffensiveLanguage(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Comentário contém palavras inadequadas!'),
+        ),
+      );
+      return;
+    }
 
     final userDoc =
         await FirebaseFirestore.instance
@@ -772,7 +826,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
           'text': text,
           'author': name,
           'avatar': avatar,
-          'authorId': user!.uid, // <-- adiciona o uid aqui
+          'authorId': user!.uid,
           'timestamp': FieldValue.serverTimestamp(),
         });
 
@@ -804,6 +858,13 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   void _addReply(String commentId) async {
     final text = _replyController.text.trim();
     if (text.isEmpty || user == null) return;
+
+    if (_containsOffensiveLanguage(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Resposta contém palavras inadequadas!')),
+      );
+      return;
+    }
 
     final userDoc =
         await FirebaseFirestore.instance
@@ -861,6 +922,17 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
               onPressed: () async {
                 final newText = editController.text.trim();
                 if (newText.isNotEmpty) {
+                  if (_containsOffensiveLanguage(newText)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Comentário contém palavras inadequadas!',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
                   try {
                     await FirebaseFirestore.instance
                         .collection('recipes')
