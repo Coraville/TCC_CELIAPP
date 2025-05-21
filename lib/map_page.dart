@@ -54,14 +54,10 @@ class _MapPageState extends State<MapPage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Não chama start/stop aqui para evitar erro com textura
-    // Apenas pause a câmera se precisar (se suportar)
-  }
+  void didChangeAppLifecycleState(AppLifecycleState state) {}
 
   @override
   void didPopNext() {
-    // Quando voltar para essa página, reative a escaneamento
     setState(() {
       _isScanning = true;
       _status = 'idle';
@@ -78,25 +74,26 @@ class _MapPageState extends State<MapPage>
   }
 
   void _onItemTapped(int index) {
+    if (_selectedIndex == index) return;
     setState(() {
       _selectedIndex = index;
     });
 
     switch (index) {
       case 0:
-        Navigator.pushNamed(context, '/profile');
+        Navigator.pushReplacementNamed(context, '/profile');
         break;
       case 1:
-        Navigator.pushNamed(context, '/map');
+        Navigator.pushReplacementNamed(context, '/map');
         break;
       case 2:
-        Navigator.pushNamed(context, '/recipes');
+        Navigator.pushReplacementNamed(context, '/recipes');
         break;
       case 3:
-        Navigator.pushNamed(context, '/shopping_list');
+        Navigator.pushReplacementNamed(context, '/shopping_list');
         break;
       case 4:
-        Navigator.pushNamed(context, '/info');
+        Navigator.pushReplacementNamed(context, '/info');
         break;
     }
   }
@@ -211,7 +208,6 @@ class _MapPageState extends State<MapPage>
       });
     }
 
-    // Voltar ao scanner após 5 segundos
     Timer(const Duration(seconds: 5), () {
       setState(() {
         _status = 'idle';
@@ -272,7 +268,6 @@ class _MapPageState extends State<MapPage>
     } else if (_status == 'checking') {
       return const Center(child: CircularProgressIndicator());
     } else {
-      // idle → scanner visível
       return const SizedBox.shrink();
     }
   }
@@ -286,7 +281,6 @@ class _MapPageState extends State<MapPage>
       ),
       body: Stack(
         children: [
-          // Scanner sempre visível, só desabilita quando _isScanning == false
           Visibility(
             visible: _isScanning,
             child: MobileScanner(
@@ -306,7 +300,6 @@ class _MapPageState extends State<MapPage>
               },
             ),
           ),
-          // Resultado aparece sobre o scanner
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             child:

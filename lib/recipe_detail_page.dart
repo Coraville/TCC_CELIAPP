@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RecipeDetailPage extends StatefulWidget {
   final String recipeId;
@@ -77,6 +78,92 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     );
   }
 
+  Future<void> _denunciarReceita() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Denunciar Receita'),
+            content: const Text(
+              'Você tem certeza que deseja denunciar a receita?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Confirmar'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmar == true) {
+      const url = 'https://forms.gle/Djv6kw67vBbE8a1u5';
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível abrir o link.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _excluirReceita() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Excluir Receita'),
+            content: const Text(
+              'Você tem certeza que deseja excluir a receita?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Confirmar'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmar == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('recipes')
+            .doc(widget.recipeId)
+            .delete();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Receita excluída com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _commentController.dispose();
@@ -111,6 +198,30 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
               ),
             ),
             backgroundColor: Colors.deepOrangeAccent,
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'denunciar') {
+                    _denunciarReceita();
+                  } else if (value == 'excluir') {
+                    _excluirReceita();
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'denunciar',
+                      child: Text('Denunciar Receita'),
+                    ),
+                    if (recipe['userId'] == user?.uid)
+                      const PopupMenuItem<String>(
+                        value: 'excluir',
+                        child: Text('Excluir Receita'),
+                      ),
+                  ];
+                },
+              ),
+            ],
           ),
           body: Column(
             children: [

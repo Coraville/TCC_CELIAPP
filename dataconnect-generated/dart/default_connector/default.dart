@@ -1,4 +1,3 @@
-import 'package:firebase_data_connect/firebase_data_connect.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 

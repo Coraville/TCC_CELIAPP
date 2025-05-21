@@ -1,12 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'recipes_page.dart';
-import 'shopping_list_page.dart';
-import 'map_page.dart';
-import 'profile_page.dart';
-import 'info_page.dart';
+
 
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 

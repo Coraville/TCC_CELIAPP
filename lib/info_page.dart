@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'recipes_page.dart';
-import 'shopping_list_page.dart';
-import 'map_page.dart';
-import 'profile_page.dart';
-import 'info_page.dart';
 
 class InfoPage extends StatefulWidget {
   const InfoPage({super.key});
