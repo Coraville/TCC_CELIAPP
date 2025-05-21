@@ -83,7 +83,9 @@ class _ListDetailPageState extends State<ListDetailPage> {
   }
 
   Future<void> _toggleItem(int index, bool value) async {
-    items[index]['checked'] = value;
+    setState(() {
+      items[index]['checked'] = value;
+    });
     await _saveItems();
   }
 
@@ -140,11 +142,19 @@ class _ListDetailPageState extends State<ListDetailPage> {
         itemCount: items.length,
         itemBuilder: (_, index) {
           final item = items[index];
+          final isChecked = item['checked'] as bool;
+
           return GestureDetector(
             onLongPress: () => _showDeleteDialog(index),
             child: CheckboxListTile(
-              title: Text(item['name']),
-              value: item['checked'],
+              title: Text(
+                item['name'],
+                style: TextStyle(
+                  decoration: isChecked ? TextDecoration.lineThrough : null,
+                  color: isChecked ? Colors.grey : null,
+                ),
+              ),
+              value: isChecked,
               onChanged: (value) => _toggleItem(index, value!),
             ),
           );

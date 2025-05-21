@@ -109,6 +109,25 @@ class _RegistroPageState extends State<RegistroPage> {
     }
   }
 
+  String? _validarSenha(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Campo obrigatório';
+    }
+    if (value.length < 8) {
+      return 'A senha deve ter no mínimo 8 caracteres';
+    }
+    if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
+      return 'A senha deve conter pelo menos uma letra';
+    }
+    if (!RegExp(r'\d').hasMatch(value)) {
+      return 'A senha deve conter pelo menos um número';
+    }
+    if (!RegExp(r'[!@#+_-$%^&*(),.?":{}|<>~`_\-+=\\/\[\];\').hasMatch(value)) {
+      return 'A senha deve conter pelo menos um caractere especial';
+    }
+    return null;
+  }
+
   void _showAvatarOptions() {
     String? tempSelectedAvatar = selectedAvatar;
 
@@ -210,6 +229,7 @@ class _RegistroPageState extends State<RegistroPage> {
     TextEditingController controller, {
     bool isPassword = false,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
   }) {
     if (hint.toLowerCase() == 'data de nascimento') {
@@ -254,26 +274,27 @@ class _RegistroPageState extends State<RegistroPage> {
                 )
                 : null,
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) return 'Campo obrigatório';
-        if (hint.toLowerCase() == 'e-mail' && !value.contains('@')) {
-          return 'E-mail inválido';
-        }
-        if (hint.toLowerCase() == 'data de nascimento') {
-          if (value.length != 10) return 'Formato inválido (dd/mm/aaaa)';
-          try {
-            final parsedDate = DateFormat('dd/MM/yyyy').parseStrict(value);
-            final now = DateTime.now();
-            if (parsedDate.year < 1900 || parsedDate.isAfter(now)) {
-              return 'Data fora do intervalo válido';
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.isEmpty) return 'Campo obrigatório';
+            if (hint.toLowerCase() == 'e-mail' && !value.contains('@')) {
+              return 'E-mail inválido';
             }
-          } catch (e) {
-            return 'Data inválida';
-          }
-        }
-
-        return null;
-      },
+            if (hint.toLowerCase() == 'data de nascimento') {
+              if (value.length != 10) return 'Formato inválido (dd/mm/aaaa)';
+              try {
+                final parsedDate = DateFormat('dd/MM/yyyy').parseStrict(value);
+                final now = DateTime.now();
+                if (parsedDate.year < 1900 || parsedDate.isAfter(now)) {
+                  return 'Data fora do intervalo válido';
+                }
+              } catch (e) {
+                return 'Data inválida';
+              }
+            }
+            return null;
+          },
     );
   }
 
@@ -312,7 +333,12 @@ class _RegistroPageState extends State<RegistroPage> {
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 15),
-                      _inputField('Senha', _senhaController, isPassword: true),
+                      _inputField(
+                        'Senha',
+                        _senhaController,
+                        isPassword: true,
+                        validator: _validarSenha,
+                      ),
                       const SizedBox(height: 15),
                       _inputField(
                         'Confirmar senha',
