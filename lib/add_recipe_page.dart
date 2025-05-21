@@ -52,6 +52,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
   final List<TextEditingController> _ingredientControllers = [];
   final TextEditingController _preparationTime = TextEditingController();
   final TextEditingController _servingsController = TextEditingController();
+  final List<TextEditingController> _preparationStepControllers = [];
   String _selectedTimeUnit = 'Minutos';
   bool _isSubmitting = false;
 
@@ -84,6 +85,12 @@ class _AddRecipePageState extends State<AddRecipePage> {
     }
   }
 
+  void _addPreparationStepField() {
+    setState(() {
+      _preparationStepControllers.add(TextEditingController());
+    });
+  }
+
   Future<String?> _uploadImageToFirebase(File imageFile) async {
     try {
       // Verifica se o usuário está autenticado
@@ -112,6 +119,21 @@ class _AddRecipePageState extends State<AddRecipePage> {
     if (_formKey.currentState!.validate()) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
+
+      final validPreparationSteps =
+          _preparationStepControllers
+              .map((c) => c.text.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+
+      if (validPreparationSteps.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Adicione pelo menos um passo de preparo.'),
+          ),
+        );
+        return;
+      }
 
       final validIngredients =
           _ingredientControllers
@@ -161,6 +183,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
           'image': imageUrl,
           'userId': user.uid,
           'avatar': avatar,
+          'preparationSteps': validPreparationSteps,
         });
 
         // Salva os ingredientes associados à receita
@@ -179,6 +202,7 @@ class _AddRecipePageState extends State<AddRecipePage> {
         _ingredientControllers.clear();
         _imageFile = null;
         _selectedTimeUnit = 'Minutos';
+        _preparationStepControllers.clear();
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Receita adicionada com sucesso!')),
@@ -211,6 +235,9 @@ class _AddRecipePageState extends State<AddRecipePage> {
     _preparationTime.dispose();
     _servingsController.dispose();
     for (var c in _ingredientControllers) {
+      c.dispose();
+    }
+    for (var c in _preparationStepControllers) {
       c.dispose();
     }
     super.dispose();
@@ -255,6 +282,65 @@ class _AddRecipePageState extends State<AddRecipePage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 12),
+
+              // NOVO CAMPO: Modo de preparo
+              const Text('Modo de preparo:'),
+              const SizedBox(height: 6),
+              ..._preparationStepControllers.asMap().entries.map((entry) {
+                final index = entry.key;
+                final controller = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Bolinha branca com número em laranja
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: primaryColor),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: controller,
+                          maxLines: null,
+                          decoration: InputDecoration(
+                            labelText: 'Passo ${index + 1}',
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty)
+                              return 'Insira o passo de preparo';
+                            if (containsForbiddenWords(v))
+                              return 'Passo com palavras proibidas';
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+
+              TextButton.icon(
+                onPressed: _addPreparationStepField,
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar passo de preparo'),
+              ),
+
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: _pickImage,

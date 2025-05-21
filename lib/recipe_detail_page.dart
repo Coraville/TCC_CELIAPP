@@ -261,6 +261,33 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                         },
                       ),
                       const SizedBox(height: 24),
+                      Divider(color: Colors.grey[300]),
+                      const SizedBox(height: 8),
+                      // MODO DE PREPARO
+                      const Text(
+                        'Modo de Preparo',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (recipe['preparationSteps'] != null &&
+                          recipe['preparationSteps'].toString().isNotEmpty)
+                        Text(
+                          recipe['preparationSteps'],
+                          style: const TextStyle(fontSize: 16),
+                        )
+                      else
+                        const Text(
+                          'Modo de preparo não disponível.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      const SizedBox(height: 24),
                       const Divider(),
                       const Text(
                         'Comentários',
