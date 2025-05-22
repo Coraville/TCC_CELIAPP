@@ -10,8 +10,6 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
-  final List<String> _text = ['C', 'e', 'l', 'i', 'A', 'p', 'p'];
-
   @override
   void initState() {
     super.initState();
@@ -30,20 +28,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
     return Scaffold(
       backgroundColor: Colors.white, // Fundo branco
       body: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children:
-              _text.map((letter) {
-                return Text(
-                  letter,
-                  style: const TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Krona One',
-                    color: Colors.deepOrangeAccent,
-                  ),
-                );
-              }).toList(),
+        child: Image.asset(
+          'assets/images/Trigo.png',
+          width: 200, // Ajuste o tamanho conforme quiser
+          height: 200,
+          fit: BoxFit.contain,
         ),
       ),
     );

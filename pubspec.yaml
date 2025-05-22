@@ -82,7 +82,6 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/images/trigo.png
     - assets/images/google_logo.png
     - assets/images/facebook_logo.png
     - assets/animations/success.json
@@ -104,6 +103,7 @@ flutter:
     - assets/avatares/avatar13.png
     - assets/placeholder.png
     - assets/gluten_products.json
+    - assets/images/Trigo.png
 
 
 

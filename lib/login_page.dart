@@ -227,9 +227,81 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  void _showPasswordResetDialog() {
+    final TextEditingController resetEmailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Redefinir senha',
+            style: TextStyle(fontFamily: 'RobotoFlex'),
+          ),
+          content: TextField(
+            controller: resetEmailController,
+            decoration: const InputDecoration(hintText: 'Digite seu e-mail'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepOrangeAccent,
+              ),
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Por favor, insira um e-mail válido.'),
+                    ),
+                  );
+                  return;
+                }
+                try {
+                  await _auth.sendPasswordResetEmail(email: email);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('E-mail de redefinição enviado!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } on FirebaseAuthException catch (e) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.message ?? 'Erro ao enviar e-mail.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text(
+                'Enviar',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _forgotpass() {
     return TextButton(
-      onPressed: () {},
+      onPressed: () {
+        _showPasswordResetDialog();
+      },
       child: const Text(
         'Esqueceu a senha?',
         style: TextStyle(
