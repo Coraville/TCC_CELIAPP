@@ -122,9 +122,6 @@ class _RegistroPageState extends State<RegistroPage> {
     if (!RegExp(r'\d').hasMatch(value)) {
       return 'A senha deve conter pelo menos um número';
     }
-    if (!RegExp(r'[!@#+_-$%^&*(),.?":{}|<>~`_\-+=\\/\[\];\').hasMatch(value)) {
-      return 'A senha deve conter pelo menos um caractere especial';
-    }
     return null;
   }
 
